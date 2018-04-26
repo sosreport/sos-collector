@@ -1,0 +1,105 @@
+#!/usr/bin/python
+# Copyright Red Hat 2017, Jake Hunsaker <jhunsake@redhat.com>
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 2 of the License, or
+# (at your option) any later version.
+
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+import argparse
+
+from soscollector.configuration import Configuration
+from soscollector.sos_collector import SosCollector
+
+
+if __name__ == '__main__':
+
+    use = 'sos-collector [options]'
+
+    desc = ('sos-collector is a utility to collect sosreports from multiple '
+            'nodes and package them in a single useful tar archive.\n\n'
+            'Most sosreport options are supported by sos-collector and are '
+            'passed directly to the sosreport command run on each node.')
+
+    parser = argparse.ArgumentParser(description=desc, usage=use)
+    parser.add_argument('-a', '--alloptions', action='store_true',
+                        help='Enable all sos options')
+    parser.add_argument('--all-logs', action='store_true',
+                        help='Collect logs regardless of size')
+    parser.add_argument('-b', '--become', action='store_true',
+                        dest='become_root',
+                        help='Become root on the remote nodes')
+    parser.add_argument('--case-id', help='Specify case number')
+    parser.add_argument('--cluster-type',
+                        help='Specify a type of cluster profile'
+                        )
+    parser.add_argument('-c', '--cluster-option', dest='cluster_options',
+                        help=('Specify a cluster options used by a profile'
+                              ' and takes the form of cluster.option=value'
+                              )
+                        )
+    parser.add_argument('-e', '--enable-plugins', required=False,
+                        default='',
+                        help='Enable specific plugins for sosreport'
+                        )
+    parser.add_argument('--image', help=('Specify the container image to use'
+                                         ' for atomic hosts. Defaults to '
+                                         'the rhel7/support-tools image'
+                                         )
+                        )
+    parser.add_argument('-k', '--plugin-option',
+                        default='',
+                        help='Plugin option as plugname.option=value'
+                        )
+    parser.add_argument('-l', '--list-options', action="store_true",
+                        help='List options available for profiles'
+                        )
+    parser.add_argument('-n', '--skip-plugins', default='',
+                        help='Skip these plugins'
+                        )
+    parser.add_argument('--name', help='Specify customer name')
+    parser.add_argument('--nodes',
+                        help='Provide a comma delimited list of nodes')
+    parser.add_argument('--no-pkg-check', action='store_true',
+                        help=('Do not run package checks. Use this '
+                              'with --cluster-type if there are rpm '
+                              'or apt issues on node'
+                              )
+                        )
+    parser.add_argument('--no-local', action='store_true',
+                        help='Do not collect a sosreport from localhost')
+    parser.add_argument('--master', help='Specify a remote master node')
+    parser.add_argument('-o', '--only-plugins', type=list,
+                        help='Run these plugins only')
+    parser.add_argument('-p', '--ssh-port',
+                        help='Specify SSH port for all nodes')
+    parser.add_argument('--password', action='store_true', default=False,
+                        help='Prompt for user password for nodes')
+    parser.add_argument('--ssh-user',
+                        help='Specify an SSH user. Default root')
+    parser.add_argument('-t', '--threads', type=int, default=4,
+                        help='Number of concurrent threads to use')
+    parser.add_argument('--timeout', type=int, required=False,
+                        help='Timeout for sosreport on each node. Default 180.'
+                        )
+    parser.add_argument('--tmp-dir',
+                        help='Specify a temp directory to save sos archives to'
+                        )
+
+    try:
+        args = vars(parser.parse_args())
+        config = Configuration(args)
+        sc = SosCollector(config)
+        if not args['list_options']:
+            sc.collect()
+        else:
+            sc.list_options()
+    except KeyboardInterrupt:
+        raise SystemExit()

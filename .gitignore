@@ -1,0 +1,8 @@
+*~
+*.pyc
+*.pyo
+MANIFEST
+build/
+dist/
+dist-build/
+*egg*

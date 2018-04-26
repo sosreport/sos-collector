@@ -1,0 +1,167 @@
+.TH sos-collector 1 "April 2018"
+
+.SH NAME
+sos-collector \- Collect sosreports from multiple (cluster) nodes
+.SH USAGE
+.B sos-collector
+    [\-a|\-\-all\-logs]
+    [\-c CLUSTER_OPTIONS]
+    [\-\-case\-id CASE_ID]
+    [\-\-cluster\-type CLUSTER_TYPE]
+    [\-e ENABLE_PLUGINS]
+    [\-k PLUGIN_OPTION]
+    [\-n SKIP_PLUGINS]
+    [\-\-name NAME]
+    [\-\-nodes NODES]
+    [\-\-no\-pkg\-check]
+    [\-\-no\-local]
+    [\-\-master MASTER]
+    [\-o ONLY_PLUGINS]
+    [\-p SSH_PORT]
+    [\-\-password PASSWORD]
+    [\-\-ssh\-user SSH_USER]
+    [\-t|\-\-threads THREADS]
+    [\-\-timeout TIMEOUT]
+    [\-\-tmp\-dir TMP_DIR]
+.PP
+.SH DESCRIPTION
+sos-collector is a utility to collect sosreports from multiple nodes and package
+them in a single useful tar archive. 
+
+sos-collector can be run either on a workstation that has SSH key authentication setup
+for the nodes in a given cluster, or from a "master" node in a cluster that has SSH
+keys configured for the other nodes.
+
+Some sosreport options are supported by sos-collector and are passed directly to 
+the sosreport command run on each node.
+
+.SH OPTIONS
+.TP
+\fB\-a\fR, \fB\-\-alloptions\fR
+Enables all sosreport options. 
+
+This does NOT enable all sos-collector options.
+.TP
+\fB\-\-all\-logs\fR
+Sosreport option. Collects all logs regardless of size. 
+
+Default: no
+.TP
+\fB\-c\fR CLUSTER_OPTIONS
+Specify options used by cluster profiles. The format is 'profile.option_name=value'.
+
+For example, for the ovirt plugin if you wanted to restrict node enumeration to
+a specific cluster you would use \fB'-c ovirt.cluster=example_cluster'\fR.
+
+Available cluster options can be listed by running \fB'sos-collector -l'\fR.
+
+.TP
+\fB\-\-case\-id\fR CASE_ID
+Sosreport option. Specifies a case number identifier.
+.TP
+\fB\-\-cluster\-type\fR CLUSTER_TYPE
+When run by itself, sos-collector will attempt to identify the type of cluster at play.
+This is done by checking package or configuration information against the localhost, or
+the master node if  \fB"--master"\fR is supplied.
+
+Setting \fB--cluster-type\fR skips this step and forcibly sets a particular profile.
+
+Example: \fBsos-collector --cluster-type=kubernetes\fR will force the kubernetes profile
+to be run, and thus set sosreport options and attempt to determine a list of nodes using
+that profile. 
+.TP
+\fB\-e\fR ENABLE_PLUGINS, \fB\-\-enable\-plugins\fR ENABLE_PLUGINS
+Sosreport option. Use this to enable a plugin that would otherwise not be run.
+
+This option supports providing a comma-delimited list of plugins.
+.TP
+\fB\-k\fR PLUGIN_OPTION, \fB\-\-plugin\-option\fR PLUGIN_OPTION
+Sosreport option. Set a plugin option to a particular value. This takes the form of
+plugin_name.option_name=value.
+
+Example: To enable the kubernetes "all" option in sosreport use \fB-k kubernetes.all=on\fR.
+.TP
+\fB\-n\fR SKIP_PLUGINS, \fB\-\-skip\-plugins\fR SKIP_PLUGINS
+Sosreport option. Disable (skip) a particular plugin that would otherwise run.
+This is useful if a particular plugin is prone to hanging for one reason or another.
+
+This option supports providing a comma-delimited list of plugins.
+.TP
+\fB\-\-name\fR NAME
+Sosreport option. Specify a customer/user name for the sosreport.
+
+Providing this will cause sos-collector to not prompt for one when executed.
+.TP
+\fB\-\-nodes\fR NODES
+Provide a comma-delimited list of nodes to collect sosreports from.
+
+Providing this option causes a cluster's profile to not discover a list of nodes on its own.
+.TP
+\fB\-\-no\-pkg\-check\fR
+Do not perform package checks. Most cluster profiles check against installed packages to determine
+if the cluster profile should be applied or not.
+
+Use this with \fB\-\-cluster-type\fR if there are rpm or apt issues on the master/local node.
+.TP
+\fB\-\-no\-local\fR
+Do not collect a sosreport from the local system. 
+
+If \fB--master\fR is not supplied, it is assumed that the host running sosreport is part of
+the cluster that is to be collected. Use this option to skip collection of a local sosreport.
+
+This option is NOT needed if \fB--master\fR is provided.
+.TP
+\fB\-\-master\fR MASTER
+Specify a master node for the cluster.
+
+If provided, then sos-collector will check the master node, not localhost, for determining
+the type of cluster in use.
+.TP
+\fB\-o\fR ONLY_PLUGINS, \fB\-\-only\-plugins\fR ONLY_PLUGINS
+Sosreport option. Run ONLY the plugins listed.
+
+Note that a cluster profile will NOT override this option. This may cause the sosreports
+generated to not contain the relevant output for a given type of cluster.
+
+This option supports providing a comma-delimited list of plugins.
+.TP
+\fB\-p\fR SSH_PORT, \fB\-\-ssh\-port\fR SSH_PORT
+Specify SSH port for all nodes. Use this if SSH runs on any port other than 22.
+.TP
+\fB\-\-ssh\-user\fR SSH_USER
+Specify an SSH user for sos-collector to connect to nodes with. Default is root.
+
+sos-collector will prompt for a sudo password for non-root users.
+.TP
+\fB\-\-password\fR PASSWORD
+Specifying this option will cause sos-collector to prompt the user for an SSH password
+that will be used to connect to all nodes.
+
+If you have differing passwords for the same user across cluster nodes, you should
+deploy SSH keys.
+.TP
+\fB\-t\fR THREADS \fB\-\-threads\fR THREADS
+Specify the number of threads to use for concurrent collection of sosreports.
+
+If the number of nodes enumerated exceeds the number of threads, then sos-collector
+will start collecting from the first X number of nodes and then continue to iterate
+through the remaining nodes as sosreport collection finishes.
+
+Defaults to 4.
+.TP
+\fB\-\-timeout\fR TIMEOUT
+Timeout for sosreport generation on each node, in seconds.
+
+Note that sosreports are collected in parallel, so this can also be considered to be
+approximately the same as a timeout for the entire collection process. 
+
+Default is 180 seconds.
+.TP
+\fB\-\-tmp\-dir\fR TMP_DIR
+Specify a temporary directory to save sos archives to. By default one will be created in
+/tmp and then removed after sos-collector has finished running.
+
+This is NOT the same as specifying a temporary directory for sosreport on the remote nodes.
+
+.SH MAINTAINER
+    Jake Hunsaker <jhunsake@redhat.com>
