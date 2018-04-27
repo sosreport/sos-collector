@@ -1,8 +1,8 @@
 Summary: Capture sosreports from multiple nodes simultaneously
 Name: sos-collector
-Version: 1.0
+Version: 1.3
 Release: 1%{?dist}
-Source0: http://people.redhat.com/jhunsake/sos-collector/releases/%{name}-%{version}.tar.gz
+Source0: http://people.redhat.com/jhunsake/sos-collector/%{name}-%{version}.tar.gz
 License: GPLv2
 BuildArch: noarch
 Url: https://github.com/sosreport/sos-collector
@@ -10,14 +10,18 @@ Requires: sos >= 3.0
 Obsoletes: clustersos < 1.2.2-2
 Provides: clustersos = %{version}-%{release}
 
-%?python_enable_dependency_generator
 
 %if 0%{?rhel}
 BuildRequires: python-devel
 BuildRequires: python-paramiko
+Requires: python-paramiko
+Requires: python-futures
+Requires: python-six
 %else
 BuildRequires: python3-devel
 BuildRequires: python3-paramiko
+Requires: python3-paramiko
+Requires: python3-six
 %endif
 
 
@@ -67,6 +71,9 @@ install -p -m644 man/en/sos-collector.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/
 %license LICENSE
 
 %changelog
+* Fri Apr 27 2018 Jake Hunsaker <jhunsake@redhat.com> 1.3-1
+  - Reset versioning to continue from clustersos
+
 * Thu Apr 26 2018 Jake Hunsaker <jhunsake@redhat.com> 1.0-1
   - Renamed project to sos-collector
   - Moved github repo to sosreport org

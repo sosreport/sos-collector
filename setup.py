@@ -20,7 +20,6 @@ setup(
                 ('License :: OSI Approved :: GNU General Public License v2 '
                  "(GPLv2)"),
                 ],
-    install_requires=['six', 'paramiko'],
     packages=find_packages(),
     scripts=['sos-collector'],
     data_files=[('share/man/man1/', ['man/en/sos-collector.1'])]

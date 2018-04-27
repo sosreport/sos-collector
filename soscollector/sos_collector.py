@@ -34,7 +34,7 @@ from distutils.sysconfig import get_python_lib
 from getpass import getpass
 from six.moves import input
 
-__version__ = '1.0'
+__version__ = '1.3'
 
 
 class SosCollector():
