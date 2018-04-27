@@ -47,7 +47,8 @@ class ovirt(Cluster):
     def get_nodes(self):
         res = self.exec_master_cmd(self.dbcmd)
         if res['status'] == 0:
-            nodes = res['stdout'].splitlines()[2:-1]
+            nodes = res['stdout'].split(' ')[2:-2]
+            nodes.remove('host_name')
             return [n.split('(')[0].strip() for n in nodes]
         else:
             raise Exception('database query failed, return code: %s'

@@ -226,4 +226,7 @@ class Cluster():
         if isinstance(nodes, str):
             node_list = [n.split(',').strip() for n in nodes]
             node_list = list(set(nodes))
+        for node in node_list:
+            if node.startswith(('-', '_', '(', ')', '[', ']','/', '\\')):
+                node_list.remove(node)
         return node_list
