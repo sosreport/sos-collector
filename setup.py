@@ -19,11 +19,8 @@ setup(
                 'Topic :: System :: Systems Administration',
                 ('License :: OSI Approved :: GNU General Public License v2 '
                  "(GPLv2)"),
-                'Programming Language :: Python :: 3.3',
-                'Programming Language :: Python :: 3.4',
-                'Programming Language :: Python :: 3.5'
                 ],
-    python_requires='!=3.0.*, !=3.1.*, >=3.3, <4',
+    install_requires=['six', 'paramiko'],
     packages=find_packages(),
     scripts=['sos-collector'],
     data_files=[('share/man/man1/', ['man/en/sos-collector.1'])]
