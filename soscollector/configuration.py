@@ -18,7 +18,7 @@ import socket
 
 class Configuration(dict):
     """ Dict subclass that is used to handle configuration information
-    needed by both ClusterSos and the SosNode classes """
+    needed by both SosCollector and the SosNode classes """
 
     def __init__(self, args=None):
         self.args = args
@@ -45,7 +45,7 @@ class Configuration(dict):
         self['password'] = False
         self['name'] = None
         self['case_id'] = None
-        self['timeout'] = 180
+        self['timeout'] = 300
         self['all_logs'] = False
         self['alloptions'] = False
         self['no_pkg_check'] = False
