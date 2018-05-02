@@ -333,13 +333,22 @@ class SosCollector():
             self.config['sos_cmd'] += '--alloptions '
         if self.config['cluster_type']:
             self.config['cluster'].modify_sos_cmd()
-        for opt in ['skip_plugins', 'enable_plugins', 'plugin_option']:
-            if opt in self.config and self.config[opt]:
-                option = ','.join(o for o in self.config[opt])
-                self.config['sos_cmd'] += '--%s=%s ' % (opt.replace('_', '-'),
-                                                        option
-                                                        )
-        self.logger.info('Initial sos cmd set to %s' % self.config['sos_cmd'])
+        # allow cmdline to override cluster profiles
+        if self.config['skip_plugins']:
+            for plug in self.config['skip_plugins']:
+                if plug in self.config['enable_plugins']:
+                    self.config['enable_plugins'].remove(plug)
+        if not self.config['only_plugins']:
+            for opt in ['skip_plugins', 'enable_plugins', 'plugin_option']:
+                if opt in self.config and self.config[opt]:
+                    option = ','.join(o for o in self.config[opt])
+                    optln = '--%s=%s ' % (opt.replace('_', '-'), option)
+                    self.config['sos_cmd'] += optln
+        else:
+            opt = ','.join(o for o in self.config['only_plugins'])
+            optln = '--only-plugins=%s' % opt
+            self.config['sos_cmd'] += optln
+        self.log_debug('Initial sos cmd set to %s' % self.config['sos_cmd'])
 
     def connect_to_master(self):
         '''If run with --master, we will run cluster checks again that

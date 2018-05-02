@@ -57,6 +57,7 @@ class Configuration(dict):
         self['skip_plugins'] = []
         self['enable_plugins'] = []
         self['plugin_option'] = []
+        self['only_plugins'] = []
         self['list_options'] = False
         self['hostlen'] = len(self['master']) or len(self['hostname'])
         self['need_sudo'] = False
@@ -84,9 +85,13 @@ class Configuration(dict):
 
     def parse_options(self):
         self.parse_cluster_options()
-        for opt in ['skip_plugins', 'enable_plugins', 'plugin_option']:
+        for opt in ['skip_plugins', 'enable_plugins', 'plugin_option',
+                    'only_plugins']:
             if self[opt]:
-                self[opt] = [o for o in self[opt].split(',')]
+                opts = []
+                for option in self[opt]:
+                    opts += option.split(',')
+                self[opt] = opts
 
     def check_user_privs(self):
         if not self['ssh_user'] == 'root':

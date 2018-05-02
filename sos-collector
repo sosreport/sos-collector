@@ -45,8 +45,7 @@ if __name__ == '__main__':
                               ' and takes the form of cluster.option=value'
                               )
                         )
-    parser.add_argument('-e', '--enable-plugins', required=False,
-                        default='',
+    parser.add_argument('-e', '--enable-plugins', action="append",
                         help='Enable specific plugins for sosreport'
                         )
     parser.add_argument('--image', help=('Specify the container image to use'
@@ -61,7 +60,7 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--list-options', action="store_true",
                         help='List options available for profiles'
                         )
-    parser.add_argument('-n', '--skip-plugins', default='',
+    parser.add_argument('-n', '--skip-plugins', action="append",
                         help='Skip these plugins'
                         )
     parser.add_argument('--name', help='Specify customer name')
@@ -76,7 +75,7 @@ if __name__ == '__main__':
     parser.add_argument('--no-local', action='store_true',
                         help='Do not collect a sosreport from localhost')
     parser.add_argument('--master', help='Specify a remote master node')
-    parser.add_argument('-o', '--only-plugins', type=list,
+    parser.add_argument('-o', '--only-plugins', action="append",
                         help='Run these plugins only')
     parser.add_argument('-p', '--ssh-port',
                         help='Specify SSH port for all nodes')
