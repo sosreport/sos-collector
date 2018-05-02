@@ -26,6 +26,16 @@ class Cluster():
     sos_options = {}
 
     def __init__(self, config):
+        '''This is the class that cluster profile should subclass in order to
+        add support for different clustering technologies and environments to
+        sos-collector.
+
+        A profile should at minimum define a package that indicates the node is
+        configured for the type of cluster the profile is intended to serve and
+        then additionall be able to return a list of enumerated nodes via the
+        get_nodes() method
+        '''
+
         self.master = None
         self.config = config
         self.cluster_type = self.__class__.__name__
@@ -67,6 +77,7 @@ class Cluster():
         return False
 
     def is_installed(self, pkg):
+        '''Checks to see if a package is installed'''
         cmd = self.master.host_facts['package_manager']['query'] + pkg
         res = self.exec_master_cmd(cmd)
         if res['status'] == 0:
@@ -88,7 +99,7 @@ class Cluster():
 
     def setup(self):
         '''This MAY be used by a cluster to do prep work in case there are
-        extra commands to be run even if a node lsit is given by the user, and
+        extra commands to be run even if a node list is given by the user, and
         thus get_nodes() would not be called
         '''
         pass
@@ -198,7 +209,6 @@ class Cluster():
 
         This will NOT override user supplied options.
         '''
-
         if self.sos_plugins:
             for plug in self.sos_plugins:
                 if plug not in self.config['sos_cmd']:
@@ -213,7 +223,6 @@ class Cluster():
         '''Format the returned list of nodes from a cluster into a known
         format. This being a list that contains no duplicates
         '''
-
         try:
             nodes = self.get_nodes()
         except Exception as e:
@@ -227,6 +236,6 @@ class Cluster():
             node_list = [n.split(',').strip() for n in nodes]
             node_list = list(set(nodes))
         for node in node_list:
-            if node.startswith(('-', '_', '(', ')', '[', ']','/', '\\')):
+            if node.startswith(('-', '_', '(', ')', '[', ']', '/', '\\')):
                 node_list.remove(node)
         return node_list
