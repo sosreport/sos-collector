@@ -65,6 +65,11 @@ class Configuration(dict):
         self['become_root'] = False
         self['root_password'] = ''
         self['threads'] = 4
+        self['compression'] = ''
+        self['verify'] = False
+        self['chroot'] = ''
+        self['sysroot'] = ''
+        self['sos_opt_line'] = ''
 
     def parse_config(self):
         for k in self.args:

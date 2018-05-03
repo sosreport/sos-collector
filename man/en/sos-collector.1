@@ -6,6 +6,7 @@ sos-collector \- Collect sosreports from multiple (cluster) nodes
 .B sos-collector
     [\-a|\-\-all\-logs]
     [\-c CLUSTER_OPTIONS]
+    [\-\-chroot CHROOT]
     [\-\-case\-id CASE_ID]
     [\-\-cluster\-type CLUSTER_TYPE]
     [\-e ENABLE_PLUGINS]
@@ -19,10 +20,15 @@ sos-collector \- Collect sosreports from multiple (cluster) nodes
     [\-o ONLY_PLUGINS]
     [\-p SSH_PORT]
     [\-\-password PASSWORD]
+    [\-\-s|\-\-sysroot SYSROOT]
     [\-\-ssh\-user SSH_USER]
+    [\-\-sos-cmd SOS_CMD]
     [\-t|\-\-threads THREADS]
     [\-\-timeout TIMEOUT]
     [\-\-tmp\-dir TMP_DIR]
+    [\-\-verify]
+    [\-z|\-\-compression-type COMPRESSION_TYPE]
+
 .PP
 .SH DESCRIPTION
 sos-collector is a utility to collect sosreports from multiple nodes and package
@@ -54,7 +60,12 @@ For example, for the ovirt plugin if you wanted to restrict node enumeration to
 a specific cluster you would use \fB'-c ovirt.cluster=example_cluster'\fR.
 
 Available cluster options can be listed by running \fB'sos-collector -l'\fR.
-
+.TP
+\fB\-\-chroot\fR CHROOT
+Sosreport option. Set the chroot mode. When \fB\-\-sysroot\fR is used commands default
+to executing with SYSROOT as the root directory. This can be overridden by setting
+\fB\-\-chroot\fR to "always" (always chroot) or "never" (always run in the host
+namespace).
 .TP
 \fB\-\-case\-id\fR CASE_ID
 Sosreport option. Specifies a case number identifier.
@@ -125,6 +136,13 @@ generated to not contain the relevant output for a given type of cluster.
 
 This option supports providing a comma-delimited list of plugins.
 .TP
+\fB\-\-password\fR PASSWORD
+Specifying this option will cause sos-collector to prompt the user for an SSH password
+that will be used to connect to all nodes.
+
+If you have differing passwords for the same user across cluster nodes, you should
+deploy SSH keys.
+.TP
 \fB\-p\fR SSH_PORT, \fB\-\-ssh\-port\fR SSH_PORT
 Specify SSH port for all nodes. Use this if SSH runs on any port other than 22.
 .TP
@@ -133,12 +151,17 @@ Specify an SSH user for sos-collector to connect to nodes with. Default is root.
 
 sos-collector will prompt for a sudo password for non-root users.
 .TP
-\fB\-\-password\fR PASSWORD
-Specifying this option will cause sos-collector to prompt the user for an SSH password
-that will be used to connect to all nodes.
+\fB\-s\fR SYSROOT, \fB\-\-sysroot\fR SYSROOT
+Sosreport option. Specify an alternate root file system path.
+.TP
+\fB\-\-sos-cmd\fR SOS_CMD
+Define all options that sosreport should be run with on the nodes. This will
+override any other commandline options as well as any options specified by a 
+cluster profile.
 
-If you have differing passwords for the same user across cluster nodes, you should
-deploy SSH keys.
+The sosreport command will execute as 'sosreport --batch SOS_CMD'. The BATCH 
+option cannot be removed from the sosreport command as it is required to run 
+sosreport non-interactively for sos-collector to function.
 .TP
 \fB\-t\fR THREADS \fB\-\-threads\fR THREADS
 Specify the number of threads to use for concurrent collection of sosreports.
@@ -162,6 +185,16 @@ Specify a temporary directory to save sos archives to. By default one will be cr
 /tmp and then removed after sos-collector has finished running.
 
 This is NOT the same as specifying a temporary directory for sosreport on the remote nodes.
+.TP
+\fB\-\-verfiy\fR
+Sosreport option. Passes the "--verify" option to sosreport on the nodes which 
+causes sosreport to validate plugin-specific data during collection.
+
+Note that this option may considerably extend the time it takes sosreport to run on
+the nodes. Consider increasing \fB\-\-timeout\fR when using this option.
+.TP
+\fB\-z\fR COMPRESSION, \fB\-\-compression-type\fR COMPRESSION
+Sosreport option. Override the default compression type.
 
 .SH MAINTAINER
     Jake Hunsaker <jhunsake@redhat.com>

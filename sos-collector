@@ -38,31 +38,28 @@ if __name__ == '__main__':
                         help='Become root on the remote nodes')
     parser.add_argument('--case-id', help='Specify case number')
     parser.add_argument('--cluster-type',
-                        help='Specify a type of cluster profile'
-                        )
+                        help='Specify a type of cluster profile')
     parser.add_argument('-c', '--cluster-option', dest='cluster_options',
                         help=('Specify a cluster options used by a profile'
                               ' and takes the form of cluster.option=value'
                               )
                         )
+    parser.add_argument('--chroot', default='',
+                        choices=['auto', 'always', 'never'],
+                        help="chroot executed commands to SYSROOT")
     parser.add_argument('-e', '--enable-plugins', action="append",
-                        help='Enable specific plugins for sosreport'
-                        )
+                        help='Enable specific plugins for sosreport')
     parser.add_argument('--image', help=('Specify the container image to use'
                                          ' for atomic hosts. Defaults to '
                                          'the rhel7/support-tools image'
                                          )
                         )
-    parser.add_argument('-k', '--plugin-option',
-                        default='',
-                        help='Plugin option as plugname.option=value'
-                        )
+    parser.add_argument('-k', '--plugin-option', default='',
+                        help='Plugin option as plugname.option=value')
     parser.add_argument('-l', '--list-options', action="store_true",
-                        help='List options available for profiles'
-                        )
+                        help='List options available for profiles')
     parser.add_argument('-n', '--skip-plugins', action="append",
-                        help='Skip these plugins'
-                        )
+                        help='Skip these plugins')
     parser.add_argument('--name', help='Specify customer name')
     parser.add_argument('--nodes',
                         help='Provide a comma delimited list of nodes')
@@ -81,16 +78,27 @@ if __name__ == '__main__':
                         help='Specify SSH port for all nodes')
     parser.add_argument('--password', action='store_true', default=False,
                         help='Prompt for user password for nodes')
+    parser.add_argument('-s', '--sysroot', default='',
+                        help="system root directory path")
+    parser.add_argument('--sos-cmd', dest='sos_opt_line',
+                        help=("Manually specify the commandline options for "
+                              "sosreport on remote nodes")
+                        )
     parser.add_argument('--ssh-user',
                         help='Specify an SSH user. Default root')
     parser.add_argument('-t', '--threads', type=int, default=4,
                         help='Number of concurrent threads to use')
     parser.add_argument('--timeout', type=int, required=False,
-                        help='Timeout for sosreport on each node. Default 180.'
+                        help='Timeout for sosreport on each node. Default 300.'
                         )
     parser.add_argument('--tmp-dir',
                         help='Specify a temp directory to save sos archives to'
                         )
+    parser.add_argument('--verify', action="store_true",
+                        help="perform data verification during collection")
+    parser.add_argument('-z', '--compression-type', dest="compression",
+                        choices=['auto', 'gzip', 'bzip2', 'xz'],
+                        help="compression technology to use")
 
     try:
         args = vars(parser.parse_args())

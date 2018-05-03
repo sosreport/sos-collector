@@ -327,12 +327,25 @@ class SosCollector():
 
     def configure_sos_cmd(self):
         '''Configures the sosreport command that is run on the nodes'''
+        if self.config['sos_opt_line']:
+            self.config['sos_cmd'] += self.config['sos_opt_line']
+            self.log_debug("User specified manual sosreport command line. "
+                           "sos command set to %s" % self.config['sos_cmd'])
+            return True
         if self.config['case_id']:
             self.config['sos_cmd'] += '--case-id=%s ' % self.config['case_id']
         if self.config['alloptions']:
             self.config['sos_cmd'] += '--alloptions '
         if self.config['cluster_type']:
             self.config['cluster'].modify_sos_cmd()
+        if self.config['verify']:
+            self.config['sos_cmd'] += '--verify '
+        if self.config['sysroot']:
+            self.config['sos_cmd'] += '-s %s ' % self.config['sysroot']
+        if self.config['chroot']:
+            self.config['sos_cmd'] += '-c %s ' % self.config['chroot']
+        if self.config['compression']:
+            self.config['sos_cmd'] += '-z %s' % self.config['compression']
         # allow cmdline to override cluster profiles
         if self.config['skip_plugins']:
             for plug in self.config['skip_plugins']:
