@@ -27,7 +27,7 @@ class pacemaker(Cluster):
 
     def get_nodes(self):
         self.res = self.exec_master_cmd('pcs status')
-        if 'node names do not match' in self.res:
+        if 'node names do not match' in self.res['stdout']:
             self.log_info('NOTE: node name mismatch reported. Attempts to '
                           'connect to some nodes may fail.\n')
         return self.parse_pcs_output()
@@ -43,14 +43,14 @@ class pacemaker(Cluster):
         return nodes
 
     def get_online_nodes(self):
-        for line in self.res:
+        for line in self.res['stdout'].splitlines():
             if line.startswith('Online:'):
                 nodes = line.split('[')[1].split(']')[0]
                 return [n for n in nodes.split(' ') if n]
 
     def get_offline_nodes(self):
         offline = []
-        for line in self.res:
+        for line in self.res['stdout'].splitlines():
             if line.startswith('Node') and line.endswith('(offline)'):
                 offline.append(line.split()[1].replace(':', ''))
         return offline
