@@ -109,9 +109,9 @@ class SosNode():
         c = {}
         c['status'] = rc
         if stdout:
-            stdout = ' '.join(s for s in stdout) or True
+            stdout = ''.join(s for s in stdout) or True
         if stderr:
-            stderr = ' '.join(s for s in stderr) or True
+            stderr = ' '.join(s for s in stderr) or False
         res = {'status': rc,
                'stdout': stdout,
                'stderr': stderr}
@@ -144,8 +144,7 @@ class SosNode():
                 proc.communicate(input=self.config['sude_pw'] + '\n')
             rc = proc.returncode
             if stdout:
-                sout = ([s.decode('utf-8') for s in stdout.splitlines()] or
-                        True)
+                sout = (stdout or True)
             else:
                 sout = None
             return self._fmt_output(stdout=sout, stderr=stderr, rc=rc)
@@ -234,10 +233,10 @@ class SosNode():
             else:
                 relfile = '/etc/os-release'
             res = self.run_command('cat ' + relfile)
-            if len(res['stdout'].split('\n')) > 2:
-                for line in res['stdout']:
+            if len(res['stdout'].splitlines()) > 2:
+                for line in res['stdout'].splitlines():
                     if line.startswith('NAME'):
-                        release = line.split()[1].lower()
+                        release = line.split('=')[1].lower().strip('"')
             else:
                 release = res['stdout'].lower()
             rh = ['fedora', 'centos', 'red hat']
