@@ -95,7 +95,7 @@ class ovirt(Cluster):
                '--batch -o postgresql {}'
                ).format(self.pg_pass, sos_opt)
         db_sos = self.exec_master_cmd(cmd)
-        for line in db_sos:
+        for line in db_sos['stdout'].splitlines():
             if fnmatch.fnmatch(line, '*sosreport-*tar*'):
                 return line.strip()
         self.log_error('Failed to gather database dump')
