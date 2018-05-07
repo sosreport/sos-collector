@@ -271,6 +271,7 @@ class SosNode():
         pstrip = self.config['cluster'].get_sos_path_strip(self.host_facts)
         if pstrip:
             return path.replace(pstrip, '')
+        path = path.split()[0]
         self.logger.debug('Final sos path for %s: %s' % (self.address, path))
         self.sos_path = path
         self.archive = path.split('/')[-1]
