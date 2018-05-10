@@ -45,4 +45,6 @@ You can run sos-collector from the git checkout, E.G.
 
 `$ ./sos-collector`
 
-Currently `sos-collector` is available for Fedora 26 and later.
+Currently `sos-collector` is available for Fedora 27 and later and can be installed from the repos:
+
+`# dnf install sos-collector`
