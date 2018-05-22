@@ -27,7 +27,8 @@ class ovirt(Cluster):
 
     option_list = [
         ('no-database', False, 'Do not collect a database dump'),
-        ('cluster', '', 'Only collect from hosts in this cluster')
+        ('cluster', '', 'Only collect from hosts in this cluster'),
+        ('datacenter', '', 'Only collect from hosts in this datacenter')
     ]
 
     def setup(self):
@@ -35,14 +36,21 @@ class ovirt(Cluster):
         if not self.get_option('no-database'):
             self.conf = self.parse_db_conf()
             self.pg_pass = self.get_db_password()
+        self.format_db_cmd()
+
+    def format_db_cmd(self):
         self.dbcmd = '/usr/share/ovirt-engine/dbscripts/engine-psql.sh -c '
-        if not self.get_option('cluster'):
-            self.dbcmd += '"select host_name from vds_static"'
-        else:
-            self.dbcmd += ('"select v.host_name from vds_static as v, cluster'
-                           'as c where v.cluster_id = (select cluster_id from'
-                           'cluster where name = \'%s\') "'
+        self.dbcmd += '"select host_name from vds_static "'
+        if self.get_option('cluster'):
+            self.dbcmd += ('" where cluster_id = (select '
+                           'cluster_id from cluster where name = \'%s\')"'
                            % self.get_option('cluster'))
+        if self.get_option('datacenter'):
+            self.dbcmd += ('"where cluster_id = (select cluster_id from '
+                           'cluster where storage_pool_id = (select id from '
+                           'storage_pool where name = \'%s\')) "'
+                           % self.get_option('datacenter'))
+        self.log_debug('Query command for ovirt DB set to: %s' % self.dbcmd)
 
     def get_nodes(self):
         res = self.exec_master_cmd(self.dbcmd)
