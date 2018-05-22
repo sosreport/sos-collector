@@ -67,6 +67,11 @@ class Cluster():
         self.logger.error(self._fmt_msg(msg))
         self.console.error(msg)
 
+    def log_debug(self, msg):
+        '''Used to print debug messages'''
+        self.logger.debug(self._fmt_msg(msg))
+        self.console.debug(self._fmt_msg(msg))
+
     def get_option(self, option):
         '''This is used to by clusters to check if a cluster option was
         supplied to sos-collector.
