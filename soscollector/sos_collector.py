@@ -123,7 +123,7 @@ class SosCollector():
         actual boolean value
         '''
         if not default.opt_type == bool:
-            if not default.opt_type == cli.__class__:
+            if not default.opt_type == cli.opt_type:
                 msg = "Invalid option type for %s. Expected %s got %s"
                 self._exit(msg % (cli.name, default.opt_type, cli.opt_type))
             return cli.value
