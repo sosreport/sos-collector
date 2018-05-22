@@ -228,9 +228,9 @@ class SosCollector():
         '''Returns the path, including filename, of the tarball we build
         that contains the collected sosreports
         '''
-        name = self._get_archive_name()
+        self.arc_name = self._get_archive_name()
         compr = 'gz'
-        return self.config['out_dir'] + name + '.tar.' + compr
+        return self.config['out_dir'] + self.arc_name + '.tar.' + compr
 
     def load_packages(self):
         '''Loads a listing of all installed packages on localhost.
@@ -547,7 +547,7 @@ class SosCollector():
                     if fname == self.console_log_file.name.split('/')[-1]:
                         arcname = 'ui.log'
                     tar.add(os.path.join(self.config['tmp_dir'], fname),
-                            arcname=arcname)
+                            arcname=self.arc_name + '/' + arcname)
                 tar.close()
         except Exception as e:
             msg = 'Could not create archive: %s' % e
