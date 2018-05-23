@@ -232,19 +232,6 @@ class SosCollector():
         compr = 'gz'
         return self.config['out_dir'] + self.arc_name + '.tar.' + compr
 
-    def load_packages(self):
-        '''Loads a listing of all installed packages on localhost.
-
-        This is used by clusters to try and determine what type
-        of cluster we're dealing with.
-
-        Only works for rpms currently
-        '''
-        rpm_cmd = 'rpm -qa --qf "%{NAME} "'
-        res = self.master.run_command(rpm_cmd)
-        if res['stdout']:
-            self.packages_list = [r for r in res['stdout'].split()]
-
     def prep(self):
         '''Based on configuration, performs setup for collection'''
         self.console.info("\nsos-collector (version %s)\n\n"
@@ -289,8 +276,6 @@ class SosCollector():
             self.config['no_local'] = True
         else:
             self.master = SosNode('localhost', self.config)
-        if not self.config['no_pkg_check']:
-            self.load_packages()
         if self.config['cluster_type']:
             self.config['cluster'] = self.clusters[self.config['cluster_type']]
         else:
