@@ -1,7 +1,7 @@
 Summary: Capture sosreports from multiple nodes simultaneously
 Name: sos-collector
 Version: 1.3
-Release: 1%{?dist}
+Release: 3%{?dist}
 Source0: http://people.redhat.com/jhunsake/sos-collector/%{name}-%{version}.tar.gz
 License: GPLv2
 BuildArch: noarch
@@ -26,9 +26,9 @@ Requires: python3-six
 
 
 %description
-sos-collector is a utility designed to capture sosreports from multiple nodes 
-at once and collect them into a single archive. If the nodes are part of 
-a cluster, profiles can be used to configure how the sosreport command 
+sos-collector is a utility designed to capture sosreports from multiple nodes
+at once and collect them into a single archive. If the nodes are part of
+a cluster, profiles can be used to configure how the sosreport command
 is run on the nodes.
 
 %prep
@@ -71,9 +71,16 @@ install -p -m644 man/en/sos-collector.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/
 %license LICENSE
 
 %changelog
+* Thu May 24 2018 Jake Hunsaker <jhunsake@redhat.com> 1.3-3
+- Fix sos-collector archive organization
+- Fix cluster option validation
+
+* Mon May 07 2018 Jake Hunsaker <jhunsake@redhat.com> 1.3-2
+- Fix collection of sosreport tarballs
+
 * Fri Apr 27 2018 Jake Hunsaker <jhunsake@redhat.com> 1.3-1
-  - Reset versioning to continue from clustersos
+- Reset versioning to continue from clustersos
 
 * Thu Apr 26 2018 Jake Hunsaker <jhunsake@redhat.com> 1.0-1
-  - Renamed project to sos-collector
-  - Moved github repo to sosreport org
+- Renamed project to sos-collector
+- Moved github repo to sosreport org
