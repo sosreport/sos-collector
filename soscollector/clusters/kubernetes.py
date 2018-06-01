@@ -20,20 +20,30 @@ class kubernetes(Cluster):
 
     sos_plugins = ['kubernetes']
     sos_options = {'kubernetes.all': 'on'}
-    packages = ('kubernetes-master',)
 
     option_list = [
         ('label', '', 'Restrict nodes to those with matching label')
     ]
 
+    def check_enabled(self):
+        if self.is_installed('atomic-openshift-master'):
+            self.cluster_type = 'openshift'
+            self.cmd = 'oc'
+            return True
+        elif self.is_installed('kubernetes-master'):
+            self.cmd = 'kubectl'
+            return True
+        else:
+            return False
+
     def get_nodes(self):
-        self.cmd = 'kubectl get nodes'
+        self.cmd += ' get nodes'
         if self.get_option('label'):
-            self.cmd += '-l %s ' % self.get_option('label')
+            self.cmd += ' -l %s ' % self.get_option('label')
         res = self.exec_master_cmd(self.cmd)
         if res['status'] == 0:
             nodes = [node.split()[0] for node in res['stdout'].splitlines()]
             nodes.remove("NAME")
             return nodes
         else:
-            raise Exception('kubectl did not return usable output')
+            raise Exception('Node enumeration did not return usable output')
