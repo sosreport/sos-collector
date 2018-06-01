@@ -222,7 +222,7 @@ class Cluster():
             for opt in self.sos_options:
                 if opt not in self.config['sos_cmd']:
                     option = '%s=%s' % (opt, self.sos_options[opt])
-                    self.config['plugin_option'].append(option)
+                    self.config['plugin_options'].append(option)
 
     def format_node_list(self):
         '''Format the returned list of nodes from a cluster into a known
