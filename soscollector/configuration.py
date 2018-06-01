@@ -54,7 +54,7 @@ class Configuration(dict):
         ips = [i[4][0] for i in socket.getaddrinfo(socket.gethostname(), None)]
         self['ip_addrs'] = list(set(ips))
         self['cluster_options'] = ''
-        self['image'] = 'rhel7/support-tools '
+        self['image'] = None
         self['skip_plugins'] = []
         self['enable_plugins'] = []
         self['plugin_options'] = []

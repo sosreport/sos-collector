@@ -128,16 +128,19 @@ class SosNode():
     def _load_sos_info(self):
         '''Queries the node for information about the installed version of sos
         '''
-        cmd = self.host_facts['package_manager']['query'] + 'sos'
+        prefix = self.set_sos_prefix()
+        cmd = prefix + self.host_facts['package_manager']['query'] + 'sos'
         res = self.run_command(cmd)
         if res['status'] == 0:
-            self.sos_info['version'] = res['stdout'].split('-')[1]
+            ver = res['stdout'].splitlines()[-1].split('-')[1]
+            self.sos_info['version'] = ver
             self.log_debug('sos version is %s' % self.sos_info['version'])
         else:
             self.log_error('sos is not installed on this node')
             self.connected = False
             return False
-        self.sosinfo = self.run_command('sosreport -l')
+        cmd = prefix + 'sosreport -l'
+        self.sosinfo = self.run_command(cmd)
         if self.sosinfo['status'] == 0:
             ENABLED = 'The following plugins are currently enabled:'
             DISABLED = 'The following plugins are currently disabled:'
@@ -170,6 +173,8 @@ class SosNode():
 
     def run_command(self, cmd, timeout=180, get_pty=False):
         '''Runs a given cmd, either via the SSH session or locally'''
+        if 'atomic' in cmd:
+            get_pty = True
         if not self.local:
             now = time.time()
             sin, sout, serr = self.client.exec_command(cmd, timeout=timeout,
@@ -204,7 +209,11 @@ class SosNode():
         '''Run a sosreport on the node, then collect it'''
         self.finalize_sos_cmd()
         self.logger.debug('Running sosreport on %s' % self.address)
-        self.execute_sos_command()
+        path = self.execute_sos_command()
+        if path:
+            self.finalize_sos_path(path)
+        else:
+            self.log_error('Unable to determine path of sos archive')
         if self.sos_path:
             self.retrieved = self.retrieve_sosreport()
         self.cleanup()
@@ -270,6 +279,18 @@ class SosNode():
         self.logger.debug('%s facts found to be %s'
                           % (self._hostname, self.host_facts))
 
+    def set_sos_prefix(self):
+        '''Sets a prefix to any sos related commands run on the node.
+        Currently, only checks for if the node is an Atomic Host, in which case
+        use the specified container image to run all sos commands in
+        '''
+        prefix = ''
+        if self.host_facts['atomic']:
+            cmd = 'atomic run --name=sos-collector-tmp --replace '
+            img = self.config['image']
+            prefix = '%s %s ' % (cmd, img)
+        return prefix
+
     def get_release(self):
         '''Determine the distribution that we're running on.
         For our intents, any Red Hat family distribution or derivitive is going
@@ -293,6 +314,8 @@ class SosNode():
             rh = ['fedora', 'centos', 'red hat']
             if any(rel in release for rel in rh):
                 self.host_facts['release'] = 'Red Hat'
+                self.config['image'] = ('registry.access.redhat.com/rhel7/'
+                                        'support-tools ')
             self.host_facts['atomic'] = 'atomic' in release
         except Exception as e:
             self.log_error(e)
@@ -345,9 +368,9 @@ class SosNode():
         '''Use host facts and compare to the cluster type to modify the sos
         command if needed'''
         self.sos_cmd = self._format_cmd(self.config['sos_cmd'])
-        prefix = self.config['cluster'].get_sos_prefix(self.host_facts)
+        prefix = self.set_sos_prefix()
         if prefix:
-            self.sos_cmd = prefix + ' ' + self.sos_cmd
+            self.sos_cmd = prefix + self.sos_cmd
         if self.config['sos_opt_line']:
             self.sos_cmd += self.config['sos_opt_line']
             return True
@@ -389,7 +412,7 @@ class SosNode():
         we are retrieving from'''
         pstrip = self.config['cluster'].get_sos_path_strip(self.host_facts)
         if pstrip:
-            return path.replace(pstrip, '')
+            path = path.replace(pstrip, '')
         path = path.split()[0]
         self.logger.debug('Final sos path for %s: %s' % (self.address, path))
         self.sos_path = path
@@ -410,20 +433,21 @@ class SosNode():
         self.logger.info('Running sosreport on %s' % self.address)
         self.log_info("Generating sosreport...")
         try:
+            path = False
             res = self.run_command(self.sos_cmd,
                                    timeout=self.config['timeout'],
                                    get_pty=True)
             if res['status'] == 0:
-                for line in res['stdout'].split(' '):
+                for line in res['stdout'].splitlines():
                     if fnmatch.fnmatch(line, '*sosreport-*tar*'):
-                        line = line.strip()
-                        self.finalize_sos_path(line)
+                        path = line.strip()
             else:
                 err = self.determine_sos_error(res['status'], res['stdout'])
                 self.log_debug("Error running sosreport. rc = %s msg = %s"
                                % (res['status'], res['stdout'] or
                                   res['stderr']))
                 self.log_error('Error running sosreport: %s' % err)
+            return path
         except socket.timeout:
             self.log_error('Timeout exceeded')
         except Exception as e:

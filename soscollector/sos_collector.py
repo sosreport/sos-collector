@@ -348,6 +348,7 @@ class SosCollector():
         try:
             self.master = SosNode(self.config['master'], self.config)
         except Exception as e:
+            self.log_debug('Failed to connect to master: %s' % e)
             self._exit('Could not connect to master node.\nAborting...')
 
     def determine_cluster(self):

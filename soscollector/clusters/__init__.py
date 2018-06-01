@@ -118,20 +118,6 @@ class Cluster():
         except:
             return ''
 
-    def set_sos_prefix(self, facts):
-        '''This may be overridden by clusters when needed.
-
-        In a cluster this should return a string that is placed immediately
-        before the 'sosreport' command, but will be after sudo if needed.
-
-        If a cluster overrides this, it will need to be known if the the
-        cluster needs to be sensitive to cluster nodes being Atomic Hosts.
-        '''
-        if facts['atomic']:
-            cmd = 'atomic run --name=sos-collector-tmp '
-            img = self.config['image']
-            return cmd + img
-
     def get_sos_path_strip(self, facts):
         '''This calls set_sos_path_strip that is used by clusters to determine
         if we need to remove a particular string from a returned sos path for
