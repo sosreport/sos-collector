@@ -28,14 +28,14 @@ class ovirt(Cluster):
     option_list = [
         ('no-database', False, 'Do not collect a database dump'),
         ('cluster', '', 'Only collect from hosts in this cluster'),
-        ('datacenter', '', 'Only collect from hosts in this datacenter')
+        ('datacenter', '', 'Only collect from hosts in this datacenter'),
+        ('no-hypervisors', False, 'Do not collect from hypervisors')
     ]
 
     def setup(self):
         self.pg_pass = False
         if not self.get_option('no-database'):
             self.conf = self.parse_db_conf()
-            self.pg_pass = self.get_db_password()
         self.format_db_cmd()
 
     def format_db_cmd(self):
@@ -53,6 +53,8 @@ class ovirt(Cluster):
         self.log_debug('Query command for ovirt DB set to: %s' % self.dbcmd)
 
     def get_nodes(self):
+        if self.get_option('no-hypervisors'):
+            return []
         res = self.exec_master_cmd(self.dbcmd)
         if res['status'] == 0:
             nodes = res['stdout'].splitlines()[2:-1]
@@ -62,18 +64,9 @@ class ovirt(Cluster):
                             % res['status'])
 
     def run_extra_cmd(self):
-        if self.pg_pass:
+        if not self.get_option('no-database'):
             return self.collect_database()
         return False
-
-    def get_db_password(self):
-        if not self.conf:
-            self.log_error('Could not parse database configuration. Will not '
-                           'attempt to collect database dump from the manager'
-                           )
-            return False
-        pg_pass = getpass('Please provide the engine database password: ')
-        return pg_pass if pg_pass else False
 
     def parse_db_conf(self):
         conf = {}
@@ -99,9 +92,9 @@ class ovirt(Cluster):
                             dbport=self.conf['ENGINE_DB_PORT'],
                             dbuser=self.conf['ENGINE_DB_USER']
                             )
-        cmd = ('PGPASSWORD={} /usr/sbin/sosreport --name=postgresqldb '
+        cmd = ('PGPASSWORD={} /usr/sbin/sosreport --name=postgresql '
                '--batch -o postgresql {}'
-               ).format(self.pg_pass, sos_opt)
+               ).format(self.conf['ENGINE_DB_PASSWORD'], sos_opt)
         db_sos = self.exec_master_cmd(cmd)
         for line in db_sos['stdout'].splitlines():
             if fnmatch.fnmatch(line, '*sosreport-*tar*'):
