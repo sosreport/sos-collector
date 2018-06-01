@@ -13,6 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import six
 import socket
 
 
@@ -56,7 +57,7 @@ class Configuration(dict):
         self['image'] = 'rhel7/support-tools '
         self['skip_plugins'] = []
         self['enable_plugins'] = []
-        self['plugin_option'] = []
+        self['plugin_options'] = []
         self['only_plugins'] = []
         self['list_options'] = False
         self['hostlen'] = len(self['master']) or len(self['hostname'])
@@ -90,10 +91,12 @@ class Configuration(dict):
 
     def parse_options(self):
         self.parse_cluster_options()
-        for opt in ['skip_plugins', 'enable_plugins', 'plugin_option',
+        for opt in ['skip_plugins', 'enable_plugins', 'plugin_options',
                     'only_plugins']:
             if self[opt]:
                 opts = []
+                if isinstance(self[opt], six.string_types):
+                    self[opt] = [self[opt]]
                 for option in self[opt]:
                     opts += option.split(',')
                 self[opt] = opts

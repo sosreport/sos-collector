@@ -16,6 +16,7 @@
 import fnmatch
 import logging
 import paramiko
+import re
 import shutil
 import socket
 import subprocess
@@ -35,6 +36,12 @@ class SosNode():
         self.sos_path = None
         self.retrieved = False
         self.host_facts = {}
+        self.sos_info = {
+            'version': None,
+            'enabled': [],
+            'disabled': [],
+            'options': []
+        }
         self.logger = logging.getLogger('sos_collector')
         self.console = logging.getLogger('sos_collector_console')
         if self.address not in ['localhost', '127.0.0.1']:
@@ -46,6 +53,7 @@ class SosNode():
         if self.connected:
             self.get_hostname()
             self.load_host_facts()
+            self._load_sos_info()
 
     def _fmt_msg(self, msg):
         return '{:<{}} : {}'.format(self._hostname,
@@ -59,13 +67,13 @@ class SosNode():
             try:
                 sftp.stat(fname)
                 return True
-            except:
+            except Exception:
                 return False
         else:
             try:
                 os.stat(fname)
                 return True
-            except:
+            except Exception:
                 return False
 
     @property
@@ -115,6 +123,49 @@ class SosNode():
         res = {'status': rc,
                'stdout': stdout,
                'stderr': stderr}
+        return res
+
+    def _load_sos_info(self):
+        '''Queries the node for information about the installed version of sos
+        '''
+        cmd = self.host_facts['package_manager']['query'] + 'sos'
+        res = self.run_command(cmd)
+        if res['status'] == 0:
+            self.sos_info['version'] = res['stdout'].split('-')[1]
+            self.log_debug('sos version is %s' % self.sos_info['version'])
+        else:
+            self.log_error('sos is not installed on this node')
+            self.connected = False
+            return False
+        self.sosinfo = self.run_command('sosreport -l')
+        if self.sosinfo['status'] == 0:
+            ENABLED = 'The following plugins are currently enabled:'
+            DISABLED = 'The following plugins are currently disabled:'
+            OPTIONS = 'The following plugin options are available:'
+            PROFILES = 'Profiles:'
+
+            enablereg = ENABLED + '(.*?)' + DISABLED
+            disreg = DISABLED + '(.*?)' + OPTIONS
+            optreg = OPTIONS + '(.*?)' + PROFILES
+            proreg = PROFILES + '(.*?)' + '\n\n'
+
+            self.sos_info['enabled'] = self._regex_sos_help(enablereg)
+            self.sos_info['disabled'] = self._regex_sos_help(disreg)
+            self.sos_info['options'] = self._regex_sos_help(optreg)
+            self.sos_info['profiles'] = self._regex_sos_help(proreg, True)
+
+    def _regex_sos_help(self, regex, is_list=False):
+        res = []
+        for result in re.findall(regex, self.sosinfo['stdout'], re.S):
+            for line in result.splitlines():
+                if not is_list:
+                    try:
+                        res.append(line.split()[0])
+                    except Exception:
+                        pass
+                else:
+                    r = line.split(',')
+                    res.extend(p.strip() for p in r if p.strip())
         return res
 
     def run_command(self, cmd, timeout=180, get_pty=False):
@@ -255,6 +306,41 @@ class SosNode():
                                                   'query': 'rpm -q '
                                                   }
 
+    def _plugin_exists(self, plugin):
+        '''Verifies if the given plugin exists on the node'''
+        return any(plugin in s for s in [self.sos_info['enabled'],
+                                         self.sos_info['disabled']])
+
+    def _check_enabled(self, plugin):
+        '''Checks to see if the plugin is default enabled on node'''
+        return plugin in self.sos_info['enabled']
+
+    def _check_disabled(self, plugin):
+        '''Checks to see if the plugin is default disabled on node'''
+        return plugin in self.sos_info['disabled']
+
+    def _plugin_option_exists(self, opt):
+        '''Attempts to verify that the given option is available on the node.
+        Note that we only get available options for enabled plugins, so if a
+        plugin has been force-enabled we cannot validate if the plugin option
+        is correct or not'''
+        plug = opt.split('.')[0]
+        if not self._plugin_exists(plug):
+            return False
+        if (self._check_disabled(plug) and
+                plug not in self.config['enable_plugins']):
+            return False
+        if self._check_enabled(plug):
+            return opt in self.sos_info['options']
+        # plugin exists, but is normally disabled. Assume user knows option is
+        # valid when enabling the plugin
+        return True
+
+    def _fmt_sos_opt_list(self, opts):
+        '''Returns a comma delimited list for sos plugins that are confirmed
+        to exist on the node'''
+        return ','.join(o for o in opts if self._plugin_exists(o))
+
     def finalize_sos_cmd(self):
         '''Use host facts and compare to the cluster type to modify the sos
         command if needed'''
@@ -262,8 +348,41 @@ class SosNode():
         prefix = self.config['cluster'].get_sos_prefix(self.host_facts)
         if prefix:
             self.sos_cmd = prefix + ' ' + self.sos_cmd
-        self.logger.info(
-            'Final sos command for %s: %s' % (self.address, self.sos_cmd))
+        if self.config['sos_opt_line']:
+            self.sos_cmd += self.config['sos_opt_line']
+            return True
+
+        if self.config['only_plugins']:
+            only = self._fmt_sos_opt_list(self.config['only_plugins'])
+            if only:
+                self.sos_cmd += '--only-plugins=%s ' % only
+            return True
+
+        if self.config['skip_plugins']:
+            # only run skip-plugins for plugins that are enabled
+            skip = [o for o in self.config['skip_plugins']
+                    if self._check_enabled(o)]
+            skipln = self._fmt_sos_opt_list(skip)
+            if skipln:
+                self.sos_cmd += '--skip-plugins=%s ' % skipln
+
+        if self.config['enable_plugins']:
+            # only run enable for plugins that are disabled
+            opts = [o for o in self.config['enable_plugins']
+                    if o not in self.config['skip_plugins']
+                    and self._check_disabled(o)]
+            enable = self._fmt_sos_opt_list(opts)
+            if enable:
+                self.sos_cmd += '--enable-plugins=%s ' % enable
+
+        if self.config['plugin_options']:
+            opts = [o for o in self.config['plugin_options']
+                    if self._plugin_exists(o.split('.')[0])
+                    and self._plugin_option_exists(o.split('=')[0])]
+            if opts:
+                self.sos_cmd += '-k %s' % ','.join(o for o in opts)
+
+        self.log_debug('final sos command set to %s' % self.sos_cmd)
 
     def finalize_sos_path(self, path):
         '''Use host facts to determine if we need to change the sos path
@@ -316,7 +435,7 @@ class SosNode():
             if self.config['need_sudo'] or self.config['become_root']:
                 try:
                     self.make_archive_readable(self.sos_path)
-                except:
+                except Exception:
                     self.log_error('Failed to make archive readable')
                     return False
             self.logger.info('Retrieving sosreport from %s' % self.address)
@@ -370,7 +489,7 @@ class SosNode():
             if self.config['need_sudo'] or self.config['become_root']:
                 try:
                     self.make_archive_readable(filename)
-                except:
+                except Exception:
                     self.console.error('Unable to make extra data readable')
                     return False
             dest = self.config['tmp_dir'] + '/' + filename.split('/')[-1]

@@ -54,7 +54,7 @@ if __name__ == '__main__':
                                          'the rhel7/support-tools image'
                                          )
                         )
-    parser.add_argument('-k', '--plugin-option', default='',
+    parser.add_argument('-k', '--plugin-options', action="append",
                         help='Plugin option as plugname.option=value')
     parser.add_argument('-l', '--list-options', action="store_true",
                         help='List options available for profiles')

@@ -294,10 +294,16 @@ class SosCollector():
         provided already.
         '''
         self.console.info('')
+
+        if not self.node_list and not self.master.connected:
+            self._exit('No nodes were detected, or nodes do not have sos '
+                       'installed.\nAborting...')
+
         self.console.info('The following is a list of nodes to collect from:')
-        if self.master:
+        if self.master.connected:
             self.console.info('\t%-*s' % (self.config['hostlen'],
                                           self.config['master']))
+
         for node in sorted(self.node_list):
             self.console.info("\t%-*s" % (self.config['hostlen'], node))
 
@@ -331,21 +337,8 @@ class SosCollector():
             self.config['sos_cmd'] += '-c %s ' % self.config['chroot']
         if self.config['compression']:
             self.config['sos_cmd'] += '-z %s' % self.config['compression']
-        # allow cmdline to override cluster profiles
-        if self.config['skip_plugins']:
-            for plug in self.config['skip_plugins']:
-                if plug in self.config['enable_plugins']:
-                    self.config['enable_plugins'].remove(plug)
-        if not self.config['only_plugins']:
-            for opt in ['skip_plugins', 'enable_plugins', 'plugin_option']:
-                if opt in self.config and self.config[opt]:
-                    option = ','.join(o for o in self.config[opt])
-                    optln = '--%s=%s ' % (opt.replace('_', '-'), option)
-                    self.config['sos_cmd'] += optln
-        else:
-            opt = ','.join(o for o in self.config['only_plugins'])
-            optln = '--only-plugins=%s' % opt
-            self.config['sos_cmd'] += optln
+        if self.config['cluster_type']:
+            self.config['cluster'].modify_sos_cmd()
         self.log_debug('Initial sos cmd set to %s' % self.config['sos_cmd'])
 
     def connect_to_master(self):
@@ -354,7 +347,7 @@ class SosCollector():
         '''
         try:
             self.master = SosNode(self.config['master'], self.config)
-        except:
+        except Exception as e:
             self._exit('Could not connect to master node.\nAborting...')
 
     def determine_cluster(self):
@@ -453,7 +446,9 @@ class SosCollector():
     def collect(self):
         ''' For each node, start a collection thread and then tar all
         collected sosreports '''
-        self.client_list.append(self.master)
+        if self.master.connected:
+            self.client_list.append(self.master)
+        self.console.info("\nConnecting to nodes...")
         for node in self.node_list:
             if node in [self.master.address, self.master.hostname]:
                 continue
