@@ -206,7 +206,7 @@ class Cluster():
                     self.config['enable_plugins'].append(plug)
         if self.sos_options:
             for opt in self.sos_options:
-                if opt not in self.config['sos_cmd']:
+                if not any(opt in o for o in self.config['plugin_options']):
                     option = '%s=%s' % (opt, self.sos_options[opt])
                     self.config['plugin_options'].append(option)
 
