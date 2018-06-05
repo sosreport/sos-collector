@@ -327,8 +327,6 @@ class SosCollector():
             self.config['sos_cmd'] += '--case-id=%s ' % self.config['case_id']
         if self.config['alloptions']:
             self.config['sos_cmd'] += '--alloptions '
-        if self.config['cluster_type']:
-            self.config['cluster'].modify_sos_cmd()
         if self.config['verify']:
             self.config['sos_cmd'] += '--verify '
         if self.config['sysroot']:
