@@ -44,8 +44,8 @@ class SosNode():
         }
         self.logger = logging.getLogger('sos_collector')
         self.console = logging.getLogger('sos_collector_console')
-        if self.address not in ['localhost', '127.0.0.1']:
-            # TODO: add check for address matching local hostname
+        if self.address not in ['localhost', '127.0.0.1',
+                                self.config['hostname']]:
             self.connected = self.open_ssh_session()
         else:
             self.connected = True
