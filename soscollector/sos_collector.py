@@ -455,7 +455,7 @@ class SosCollector():
                 client = SosNode(node, self.config)
                 if client.connected:
                     self.client_list.append(client)
-            except:
+            except Exception:
                 pass
 
         self.report_num = len(self.client_list)

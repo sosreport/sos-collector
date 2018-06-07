@@ -266,7 +266,7 @@ class SosNode():
                 self.log_error('Socket error trying to connect: %s' % err)
         except Exception as e:
             self.log_error('Exception caught while trying to connect: %s' % e)
-        return False
+        raise
 
     def close_ssh_session(self):
         '''Handle closing the SSH session'''
