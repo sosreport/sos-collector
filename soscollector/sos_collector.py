@@ -442,21 +442,31 @@ class SosCollector():
         self.log_debug('Able to collect local sos')
         return True
 
+    def _connect_to_node(self, node):
+        '''Try to connect to the node, and if we can add to the client list to
+        run sosreport on
+        '''
+        try:
+            client = SosNode(node, self.config)
+            if client.connected:
+                self.client_list.append(client)
+            else:
+                client.close_ssh_session()
+        except Exception:
+            pass
+
     def collect(self):
         ''' For each node, start a collection thread and then tar all
         collected sosreports '''
         if self.master.connected:
             self.client_list.append(self.master)
         self.console.info("\nConnecting to nodes...")
-        for node in self.node_list:
-            if node in [self.master.address, self.master.hostname]:
-                continue
-            try:
-                client = SosNode(node, self.config)
-                if client.connected:
-                    self.client_list.append(client)
-            except Exception:
-                pass
+        filters = [self.master.address, self.master.hostname]
+        nodes = [n for n in self.node_list if n not in filters]
+
+        pool = ThreadPoolExecutor(self.config['threads'])
+        pool.map(self._connect_to_node, nodes, chunksize=1)
+        pool.shutdown(wait=True)
 
         self.report_num = len(self.client_list)
 
