@@ -192,6 +192,20 @@ class Cluster():
             self.logger.error('Failed to get node list: %s' % e)
             raise
 
+    def get_node_label(self, facts):
+        '''Used by SosNode() to retrieve the appropriate label from the cluster
+        as set by set_node_label() in the cluster profile.
+        '''
+        return self.set_node_label(facts)
+
+    def set_node_label(self, facts):
+        '''This may be overridden by clusters.
+
+        If there is a distinction between masters and nodes, or types of nodes,
+        then this can be used to label the sosreport archive differently.
+        '''
+        return None
+
     def modify_sos_cmd(self):
         '''This is used to modify the sosreport command run on the nodes.
         By default, sosreport is run without any options, using this will

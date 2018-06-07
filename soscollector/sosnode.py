@@ -23,6 +23,7 @@ import subprocess
 import sys
 import time
 
+from distutils.version import LooseVersion
 from subprocess import Popen, PIPE
 
 
@@ -171,6 +172,13 @@ class SosNode():
                     res.extend(p.strip() for p in r if p.strip())
         return res
 
+    def check_sos_version(self, ver):
+        '''Checks to see if the sos installation on the node is AT LEAST the
+        given ver. This means that if the installed version is greater than
+        ver, this will still return True
+        '''
+        return LooseVersion(self.sos_info['version']) >= ver
+
     def run_command(self, cmd, timeout=180, get_pty=False):
         '''Runs a given cmd, either via the SSH session or locally'''
         if 'atomic' in cmd:
@@ -311,9 +319,10 @@ class SosNode():
                         release = line.split('=')[1].lower().strip('"')
             else:
                 release = res['stdout'].lower()
+            self.host_facts['release'] = release
             rh = ['fedora', 'centos', 'red hat']
             if any(rel in release for rel in rh):
-                self.host_facts['release'] = 'Red Hat'
+                self.host_facts['distro'] = 'Red Hat'
                 self.config['image'] = ('registry.access.redhat.com/rhel7/'
                                         'support-tools ')
             self.host_facts['atomic'] = 'atomic' in release
@@ -324,7 +333,7 @@ class SosNode():
         '''Based on the distribution of the node, set the package manager to
         use for checking system installations'''
         self.host_facts['package_manager'] = None
-        if self.host_facts['release'] == 'Red Hat':
+        if self.host_facts['distro'] == 'Red Hat':
             self.host_facts['package_manager'] = {'name': 'rpm',
                                                   'query': 'rpm -q '
                                                   }
@@ -371,9 +380,15 @@ class SosNode():
         prefix = self.set_sos_prefix()
         if prefix:
             self.sos_cmd = prefix + self.sos_cmd
+
         if self.config['sos_opt_line']:
             self.sos_cmd += self.config['sos_opt_line']
             return True
+
+        if not self.address == self.config['master']:
+            label = self.determine_sos_label()
+            if label:
+                self.sos_cmd = '%s %s ' % (self.sos_cmd, label)
 
         if self.config['only_plugins']:
             only = self._fmt_sos_opt_list(self.config['only_plugins'])
@@ -406,6 +421,18 @@ class SosNode():
                 self.sos_cmd += '-k %s' % ','.join(o for o in opts)
 
         self.log_debug('final sos command set to %s' % self.sos_cmd)
+
+    def determine_sos_label(self):
+        '''Determine what, if any, label should be added to the sosreport'''
+        label = self.config['cluster'].get_node_label(self.host_facts)
+        if not label:
+            return None
+        if self.check_sos_version('3.6'):
+            lcmd = '--label'
+        else:
+            lcmd = '--name'
+            label = '%s-%s' % (self.address, label)
+        return '%s=%s' % (lcmd, label)
 
     def finalize_sos_path(self, path):
         '''Use host facts to determine if we need to change the sos path

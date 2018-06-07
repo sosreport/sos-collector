@@ -63,6 +63,12 @@ class ovirt(Cluster):
             raise Exception('database query failed, return code: %s'
                             % res['status'])
 
+    def set_node_label(self, facts):
+        if 'Hypervisor' in facts['release']:
+            return 'rhvh'
+        else:
+            return 'rhelh'
+
     def run_extra_cmd(self):
         if not self.get_option('no-database'):
             return self.collect_database()
