@@ -22,5 +22,7 @@ setup(
                 ],
     packages=find_packages(),
     scripts=['sos-collector'],
-    data_files=[('share/man/man1/', ['man/en/sos-collector.1'])]
+    data_files=[
+        ('share/man/man1/', ['man/en/sos-collector.1']),
+        ('share/licenses/sos-collector', ['LICENSE'])]
     )
