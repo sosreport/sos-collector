@@ -36,7 +36,7 @@ class SosNode():
         self.config = config
         self.sos_path = None
         self.retrieved = False
-        self.host_facts = {}
+        self.host_facts = {'address': address}
         self.sos_info = {
             'version': None,
             'enabled': [],
@@ -385,10 +385,9 @@ class SosNode():
             self.sos_cmd += self.config['sos_opt_line']
             return True
 
-        if not self.address == self.config['master']:
-            label = self.determine_sos_label()
-            if label:
-                self.sos_cmd = '%s %s ' % (self.sos_cmd, label)
+        label = self.determine_sos_label()
+        if label:
+            self.sos_cmd = '%s %s ' % (self.sos_cmd, label)
 
         if self.config['only_plugins']:
             only = self._fmt_sos_opt_list(self.config['only_plugins'])
@@ -424,14 +423,21 @@ class SosNode():
 
     def determine_sos_label(self):
         '''Determine what, if any, label should be added to the sosreport'''
-        label = self.config['cluster'].get_node_label(self.host_facts)
+        label = ''
+        label += self.config['cluster'].get_node_label(self.host_facts)
+
+        if self.config['label']:
+            label += ('%s' % self.config['label'] if not label
+                      else '-%s' % self.config['label'])
+
         if not label:
             return None
+
         if self.check_sos_version('3.6'):
             lcmd = '--label'
         else:
             lcmd = '--name'
-            label = '%s-%s' % (self.address, label)
+            label = '%s-%s' % (self.address.split('.')[0], label)
         return '%s=%s' % (lcmd, label)
 
     def finalize_sos_path(self, path):

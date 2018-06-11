@@ -44,7 +44,7 @@ class Configuration(dict):
         self['cluster_type'] = None
         self['cluster'] = None
         self['password'] = False
-        self['name'] = None
+        self['label'] = None
         self['case_id'] = None
         self['timeout'] = 300
         self['all_logs'] = False

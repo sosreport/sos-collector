@@ -58,9 +58,9 @@ if __name__ == '__main__':
                         help='Plugin option as plugname.option=value')
     parser.add_argument('-l', '--list-options', action="store_true",
                         help='List options available for profiles')
+    parser.add_argument('--label', help='Assign a label to the archives')
     parser.add_argument('-n', '--skip-plugins', action="append",
                         help='Skip these plugins')
-    parser.add_argument('--name', help='Specify customer name')
     parser.add_argument('--nodes',
                         help='Provide a comma delimited list of nodes')
     parser.add_argument('--no-pkg-check', action='store_true',

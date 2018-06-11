@@ -11,8 +11,8 @@ sos-collector \- Collect sosreports from multiple (cluster) nodes
     [\-\-cluster\-type CLUSTER_TYPE]
     [\-e ENABLE_PLUGINS]
     [\-k PLUGIN_OPTION]
+    [\-\-label LABEL]
     [\-n SKIP_PLUGINS]
-    [\-\-name NAME]
     [\-\-nodes NODES]
     [\-\-no\-pkg\-check]
     [\-\-no\-local]
@@ -20,7 +20,7 @@ sos-collector \- Collect sosreports from multiple (cluster) nodes
     [\-o ONLY_PLUGINS]
     [\-p SSH_PORT]
     [\-\-password PASSWORD]
-    [\-\-s|\-\-sysroot SYSROOT]
+    [\-s|\-\-sysroot SYSROOT]
     [\-\-ssh\-user SSH_USER]
     [\-\-sos-cmd SOS_CMD]
     [\-t|\-\-threads THREADS]
@@ -92,16 +92,18 @@ plugin_name.option_name=value.
 
 Example: To enable the kubernetes "all" option in sosreport use \fB-k kubernetes.all=on\fR.
 .TP
+\fB\-\-label\fR LABEL
+Specify a label to be added to the archive names. This label will be applied to
+both the sos-collector archive and the sosreport archives.
+
+If a cluster sets a default label, the user-provided label will be appended to
+that cluster default.
+.TP
 \fB\-n\fR SKIP_PLUGINS, \fB\-\-skip\-plugins\fR SKIP_PLUGINS
 Sosreport option. Disable (skip) a particular plugin that would otherwise run.
 This is useful if a particular plugin is prone to hanging for one reason or another.
 
 This option supports providing a comma-delimited list of plugins.
-.TP
-\fB\-\-name\fR NAME
-Sosreport option. Specify a customer/user name for the sosreport.
-
-Providing this will cause sos-collector to not prompt for one when executed.
 .TP
 \fB\-\-nodes\fR NODES
 Provide a comma-delimited list of nodes to collect sosreports from.

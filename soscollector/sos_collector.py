@@ -210,8 +210,8 @@ class SosCollector():
     def _get_archive_name(self):
         '''Generates a name for the tarball archive'''
         nstr = 'sos-collector'
-        if self.config['name']:
-            nstr += '-%s' % self.config['name']
+        if self.config['label']:
+            nstr += '-%s' % self.config['label']
         if self.config['case_id']:
             nstr += '-%s' % self.config['case_id']
         dt = datetime.strftime(datetime.now(), '%Y-%m-%d')
@@ -309,9 +309,6 @@ class SosCollector():
 
         self.console.info('')
 
-        if not self.config['name']:
-            msg = '\nPlease enter your first inital and last name: '
-            self.config['name'] = input(msg)
         if not self.config['case_id']:
             msg = 'Please enter the case id you are collecting reports for: '
             self.config['case_id'] = input(msg)

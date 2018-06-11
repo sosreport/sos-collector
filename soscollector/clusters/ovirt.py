@@ -64,7 +64,9 @@ class ovirt(Cluster):
                             % res['status'])
 
     def set_node_label(self, facts):
-        if 'Hypervisor' in facts['release']:
+        if facts['address'] == self.master.address:
+            return 'manager'
+        if 'hypervisor' in facts['release']:
             return 'rhvh'
         else:
             return 'rhelh'
