@@ -94,7 +94,7 @@ class SosCollector():
         self.log_error(msg)
         try:
             self.close_all_connections()
-        except:
+        except Exception:
             pass
         sys.exit(error)
 
@@ -372,14 +372,9 @@ class SosCollector():
 
     def get_nodes_from_cluster(self):
         '''Collects the list of nodes from the determined cluster cluster'''
-        try:
-            nodes = self.config['cluster']._get_nodes()
-            if nodes is None:
-                raise
-            self.logger.info('Node list: %s' % nodes)
-            return nodes
-        except:
-            self._exit('')
+        nodes = self.config['cluster']._get_nodes()
+        self.logger.info('Node list: %s' % nodes)
+        return nodes
 
     def reduce_node_list(self):
         '''Reduce duplicate entries of the localhost and/or master node
@@ -420,7 +415,7 @@ class SosCollector():
         self.reduce_node_list()
         try:
             self.config['hostlen'] = len(max(self.node_list, key=len))
-        except:
+        except TypeError:
             self.config['hostlen'] = len(self.config['master'])
 
     def can_run_local_sos(self):

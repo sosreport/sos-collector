@@ -109,24 +109,12 @@ class Cluster():
         '''
         pass
 
-    def get_sos_prefix(self, facts):
-        '''This wraps set_sos_prefix used by clusters.
-        It is called by sosnode.finalize_sos_cmd() for each node
-        '''
-        try:
-            return self.set_sos_prefix(facts)
-        except:
-            return ''
-
     def get_sos_path_strip(self, facts):
         '''This calls set_sos_path_strip that is used by clusters to determine
         if we need to remove a particular string from a returned sos path for
         any reason
         '''
-        try:
-            return self.set_sos_path_strip(facts)
-        except:
-            return ''
+        return self.set_sos_path_strip(facts)
 
     def set_sos_path_strip(self, facts):
         '''This may be overriden by a cluster and used to set
@@ -146,10 +134,7 @@ class Cluster():
         '''This calls set_cleanup_cmd that is used by clusers to determine if
         sos-collector needs to do additional cleanup on a node
         '''
-        try:
-            return self.set_cleanup_cmd(facts)
-        except:
-            return False
+        return self.set_cleanup_cmd(facts)
 
     def set_cleanup_cmd(self, facts):
         '''This should be overridden by a cluster and used to set an additional
