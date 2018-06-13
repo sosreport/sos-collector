@@ -14,13 +14,13 @@ Provides: clustersos = %{version}-%{release}
 %if 0%{?rhel}
 BuildRequires: python-devel
 BuildRequires: python-paramiko
-Requires: python-paramiko
+Requires: python-paramiko >= 2.0
 Requires: python-futures
 Requires: python-six
 %else
 BuildRequires: python3-devel
 BuildRequires: python3-paramiko
-Requires: python3-paramiko
+Requires: python3-paramiko >= 2.0
 Requires: python3-six
 %endif
 
