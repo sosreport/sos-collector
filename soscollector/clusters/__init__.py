@@ -49,7 +49,7 @@ class Cluster():
     def _get_options(self):
         '''Loads the options defined by a cluster and sets the default value'''
         for opt in self.option_list:
-            option = ClusterOption(name=opt[0], opt_type=opt[0].__class__,
+            option = ClusterOption(name=opt[0], opt_type=opt[1].__class__,
                                    value=opt[1], cluster=self.cluster_type,
                                    description=opt[2])
             self.options.append(option)
