@@ -189,7 +189,7 @@ class Cluster():
         If there is a distinction between masters and nodes, or types of nodes,
         then this can be used to label the sosreport archive differently.
         '''
-        return None
+        return ''
 
     def modify_sos_cmd(self):
         '''This is used to modify the sosreport command run on the nodes.
