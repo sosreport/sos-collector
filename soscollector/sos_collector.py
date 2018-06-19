@@ -415,7 +415,7 @@ class SosCollector():
         self.reduce_node_list()
         try:
             self.config['hostlen'] = len(max(self.node_list, key=len))
-        except TypeError:
+        except (TypeError, ValueError):
             self.config['hostlen'] = len(self.config['master'])
 
     def can_run_local_sos(self):
