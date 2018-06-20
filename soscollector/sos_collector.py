@@ -33,6 +33,7 @@ from .sosnode import SosNode
 from distutils.sysconfig import get_python_lib
 from getpass import getpass
 from six.moves import input
+from textwrap import fill
 
 __version__ = '1.3'
 
@@ -232,19 +233,47 @@ class SosCollector():
         compr = 'gz'
         return self.config['out_dir'] + self.arc_name + '.tar.' + compr
 
+    def _fmt_msg(self, msg):
+        width = 80
+        _fmt = ''
+        for line in msg.splitlines():
+            _fmt = _fmt + fill(line, width, replace_whitespace=False) + '\n'
+        return _fmt
+
     def prep(self):
         '''Based on configuration, performs setup for collection'''
-        self.console.info("\nsos-collector (version %s)\n\n"
-                          "This utility is used to collect sosreports from "
-                          "multiple nodes simultaneously\n" % __version__)
+        disclaimer = ("""\
+This utility is used to collect sosreports from multiple \
+nodes simultaneously. It uses the python-paramiko library \
+to manage the SSH connections to remote systems. If this \
+library is not acceptable for use in your environment, \
+you should not use this utility.
+
+An archive of collected sosreport tarballs will be generated in \
+%s and may be provided to an appropriate support representative.
+
+The generated archive may contain data considered sensitive \
+and its content should be reviewed by the originating \
+organization before being passed to any third party.
+
+No configuration changes will be made to the system running \
+this utility or remote systems that it connects to.
+""")
+
+        self.console.info("\nsos-collector (version %s)\n" % __version__)
+        intro_msg = self._fmt_msg(disclaimer % self.config['tmp_dir'])
+        intro_msg += "\nPress ENTER to continue, or CTRL-C to quit\n"
+        try:
+            input(intro_msg)
+        except KeyboardInterrupt:
+            self.console.error("Exiting on user cancel")
+            self._exit(130)
 
         if not self.config['password']:
             self.log_debug('password not specified, assuming SSH keys')
-            self.console.info((
-                'Please Note: sos-collector ASSUMES that SSH keys are '
-                'installed on all nodes unless the --password option is '
-                'provided.\n'
-            ))
+            msg = ('sos-collector ASSUMES that SSH keys are installed on all '
+                   'nodes unless the --password option is provided.\n')
+            self.console.info(self._fmt_msg(msg))
 
         if self.config['become_root']:
             if not self.config['ssh_user'] == 'root':
