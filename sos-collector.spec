@@ -1,7 +1,7 @@
 Summary: Capture sosreports from multiple nodes simultaneously
 Name: sos-collector
-Version: 1.3
-Release: 3%{?dist}
+Version: 1.4
+Release: 1%{?dist}
 Source0: http://people.redhat.com/jhunsake/sos-collector/%{name}-%{version}.tar.gz
 License: GPLv2
 BuildArch: noarch
@@ -71,6 +71,9 @@ install -p -m644 man/en/sos-collector.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/
 %license LICENSE
 
 %changelog
+* Fri Jun 22 2018 Jake Hunsaker <jhunsake@redhat.com> 1.4-1
+- New upstream release
+
 * Thu May 24 2018 Jake Hunsaker <jhunsake@redhat.com> 1.3-3
 - Fix sos-collector archive organization
 - Fix cluster option validation
