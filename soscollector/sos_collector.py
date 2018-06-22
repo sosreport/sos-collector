@@ -491,8 +491,8 @@ this utility or remote systems that it connects to.
 
         self.report_num = len(self.client_list)
 
-        self.console.info("\nBegining collection of sosreports from %s nodes, "
-                          "collecting a maximum of %s concurrently\n"
+        self.console.info("\nBeginning collection of sosreports from %s nodes,"
+                          " collecting a maximum of %s concurrently\n"
                           % (len(self.client_list), self.config['threads']))
 
         try:
