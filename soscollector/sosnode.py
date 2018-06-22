@@ -117,6 +117,10 @@ class SosNode():
         '''Formats the returned output from a command into a dict'''
         c = {}
         c['status'] = rc
+        if isinstance(stdout, bytes):
+            stdout = [str(stdout)]
+        if isinstance(stderr, bytes):
+            stderr = [str(stderr)]
         if stdout:
             stdout = ''.join(s for s in stdout) or True
         if stderr:
