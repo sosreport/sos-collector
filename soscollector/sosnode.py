@@ -29,7 +29,7 @@ from subprocess import Popen, PIPE
 
 class SosNode():
 
-    def __init__(self, address, config):
+    def __init__(self, address, config, force=False, load_facts=True):
         self.address = address.strip()
         self.local = False
         self.hostname = None
@@ -43,15 +43,15 @@ class SosNode():
             'disabled': [],
             'options': []
         }
+        filt = ['localhost', '127.0.0.1', self.config['hostname']]
         self.logger = logging.getLogger('sos_collector')
         self.console = logging.getLogger('sos_collector_console')
-        if self.address not in ['localhost', '127.0.0.1',
-                                self.config['hostname']]:
+        if self.address not in filt or force:
             self.connected = self.open_ssh_session()
         else:
             self.connected = True
             self.local = True
-        if self.connected:
+        if self.connected and load_facts:
             self.get_hostname()
             self.load_host_facts()
             self._load_sos_info()
@@ -117,9 +117,9 @@ class SosNode():
         '''Formats the returned output from a command into a dict'''
         c = {}
         c['status'] = rc
-        if isinstance(stdout, bytes):
+        if isinstance(stdout, (bytes, unicode)):
             stdout = [str(stdout)]
-        if isinstance(stderr, bytes):
+        if isinstance(stderr, (bytes, unicode)):
             stderr = [str(stderr)]
         if stdout:
             stdout = ''.join(s for s in stdout) or True
@@ -278,6 +278,7 @@ class SosNode():
             return True
         try:
             self.client.close()
+            self.connected = False
             return True
         except Exception as e:
             self.log_error('Error closing SSH session: %s' % e)
