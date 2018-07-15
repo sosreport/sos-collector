@@ -61,7 +61,7 @@ if __name__ == '__main__':
     parser.add_argument('--label', help='Assign a label to the archives')
     parser.add_argument('-n', '--skip-plugins', action="append",
                         help='Skip these plugins')
-    parser.add_argument('--nodes',
+    parser.add_argument('--nodes', action="append",
                         help='Provide a comma delimited list of nodes')
     parser.add_argument('--no-pkg-check', action='store_true',
                         help=('Do not run package checks. Use this '

@@ -46,6 +46,7 @@ class SosCollector():
         self.threads = []
         self.workers = []
         self.client_list = []
+        self.node_list = []
         self.master = False
         self.retrieved = 0
         self.need_local_sudo = False
@@ -423,6 +424,18 @@ this utility or remote systems that it connects to.
         self.node_list = list(set(n for n in self.node_list if n))
         self.logger.info('Node list reduced to %s' % self.node_list)
 
+    def compare_node_to_regex(self, node):
+        '''Compares a discovered node name to a provided list of nodes from
+        the user. If there is not a match, the node is removed from the list'''
+        for regex in self.config['nodes']:
+            try:
+                if re.match(regex, node):
+                    return True
+            except re.error as err:
+                msg = 'Error comparing %s to provided node regex %s: %s'
+                self.log_debug(msg % (node, regex, err))
+        return False
+
     def get_nodes(self):
         ''' Sets the list of nodes to collect sosreports from '''
         if not self.config['master'] and not self.config['cluster']:
@@ -430,10 +443,32 @@ this utility or remote systems that it connects to.
                    'nodes or master node was provided.\nAborting...'
                    )
             self._exit(msg)
+
+        try:
+            nodes = self.get_nodes_from_cluster()
+            if self.config['nodes']:
+                for node in nodes:
+                    if self.compare_node_to_regex(node):
+                        self.node_list.append(node)
+            else:
+                self.node_list = nodes
+        except Exception as e:
+            self.log_debug("Error parsing node list: %s" % e)
+            self.log_debug('Setting node list to --nodes option')
+            self.node_list = self.config['nodes']
+            for node in self.node_list:
+                if any(i in node for i in ('*', '\\', '?', '(', ')', '/')):
+                    self.node_list.remove(node)
+
+        # force add any non-regex node strings from nodes option
         if self.config['nodes']:
-            self.node_list = [n for n in self.config['nodes'].split(',')]
-        else:
-            self.node_list = self.get_nodes_from_cluster()
+            for node in self.config['nodes']:
+                if any(i in node for i in ('*', '\\', '?', '(', ')', '/')):
+                    continue
+                if node not in self.node_list:
+                    self.log_debug("Force adding %s to node list" % node)
+                    self.node_list.append(node)
+
         if not self.config['master']:
             host = self.config['hostname'].split('.')[0]
             # trust the local hostname before the node report from cluster

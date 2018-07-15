@@ -13,6 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import re
 import six
 import socket
 
@@ -27,6 +28,7 @@ class Configuration(dict):
         self.parse_config()
         self.parse_options()
         self.check_user_privs()
+        self.parse_node_strings()
 
     def set_defaults(self):
         self['sos_mod'] = {}
@@ -71,6 +73,37 @@ class Configuration(dict):
         self['chroot'] = ''
         self['sysroot'] = ''
         self['sos_opt_line'] = ''
+
+    def parse_node_strings(self):
+        '''
+        Parses the given --nodes option(s) to properly format the regex
+        list that we use. We cannot blindly split on ',' chars since it is a
+        valid regex character, so we need to scan along the given strings and
+        check at each comma if we should use the preceeding string by itself
+        or not, based on if there is a valid regex at that index.
+        '''
+        if not self['nodes']:
+            return
+        nodes = []
+        if not isinstance(self['nodes'], list):
+            self['nodes'] = [self['nodes']]
+        for node in self['nodes']:
+            idxs = [i for i, m in enumerate(node) if m == ',']
+            idxs.append(len(node))
+            start = 0
+            pos = 0
+            for idx in idxs:
+                try:
+                    pos = idx
+                    reg = node[start:idx]
+                    re.compile(reg)
+                    nodes.append(reg.lstrip(','))
+                    start = idx
+                except re.error:
+                    continue
+            if pos != len(node):
+                nodes.append(node[pos+1:])
+        self['nodes'] = nodes
 
     def parse_config(self):
         for k in self.args:

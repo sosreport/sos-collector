@@ -15,7 +15,7 @@ class OptionTests(unittest.TestCase):
         self.config = Configuration(args)
 
     def test_option_parse(self):
-        self.assertEquals(self.config['nodes'], 'localhost')
+        self.assertEquals(self.config['nodes'], ['localhost'])
 
     def test_cluster_options_parsing(self):
         self.assertIsInstance(self.config['cluster_options'], list)
@@ -32,3 +32,12 @@ class OptionTests(unittest.TestCase):
         self.assertIsInstance(self.config['skip_plugins'], list)
         self.assertEquals(self.config['enable_plugins'], ['foobar', 'barfoo'])
         self.assertEquals(self.config['skip_plugins'], ['barfoo'])
+
+    def test_nodes_regex_parsing(self):
+        args = {
+            'nodes': 'foo[1,3].example.com,bar*.example.com,foo.example.com'
+        }
+        config = Configuration(args)
+        self.assertEquals(config['nodes'], ['foo[1,3].example.com',
+                                            'bar*.example.com',
+                                            'foo.example.com'])
