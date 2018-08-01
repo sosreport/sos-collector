@@ -34,6 +34,7 @@ from distutils.sysconfig import get_python_lib
 from getpass import getpass
 from six.moves import input
 from textwrap import fill
+from soscollector import __version__
 
 
 class SosCollector():
