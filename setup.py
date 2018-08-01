@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-from soscollector.sos_collector import __version__ as VERSION
+from soscollector import __version__ as VERSION
 
 setup(
     name='sos-collector',

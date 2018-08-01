@@ -35,8 +35,6 @@ from getpass import getpass
 from six.moves import input
 from textwrap import fill
 
-__version__ = '1.4'
-
 
 class SosCollector():
     '''Main sos-collector class'''
