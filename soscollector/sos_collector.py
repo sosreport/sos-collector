@@ -520,23 +520,25 @@ this utility or remote systems that it connects to.
         filters = [self.master.address, self.master.hostname]
         nodes = [n for n in self.node_list if n not in filters]
 
-        pool = ThreadPoolExecutor(self.config['threads'])
-        pool.map(self._connect_to_node, nodes, chunksize=1)
-        pool.shutdown(wait=True)
-
-        self.report_num = len(self.client_list)
-
-        self.console.info("\nBeginning collection of sosreports from %s nodes,"
-                          " collecting a maximum of %s concurrently\n"
-                          % (len(self.client_list), self.config['threads']))
-
         try:
+            pool = ThreadPoolExecutor(self.config['threads'])
+            pool.map(self._connect_to_node, nodes, chunksize=1)
+            pool.shutdown(wait=True)
+
+            self.report_num = len(self.client_list)
+
+            self.console.info("\nBeginning collection of sosreports from %s "
+                              "nodes, collecting a maximum of %s "
+                              "concurrently\n"
+                              % (len(self.client_list), self.config['threads'])
+                              )
+
             pool = ThreadPoolExecutor(self.config['threads'])
             pool.map(self._collect, self.client_list, chunksize=1)
             pool.shutdown(wait=True)
         except KeyboardInterrupt:
-            self.console.error(' Keyboard interrupt\n')
-            os._exit(1)
+            self.log_error('Exiting on user cancel\n')
+            os._exit(130)
 
         if hasattr(self.config['cluster'], 'run_extra_cmd'):
             self.console.info('Collecting additional data from master node...')
