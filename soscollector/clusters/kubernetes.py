@@ -26,11 +26,11 @@ class kubernetes(Cluster):
     ]
 
     def check_enabled(self):
-        if self.is_installed('atomic-openshift-master'):
+        if self.master.is_installed('atomic-openshift-master'):
             self.cluster_type = 'openshift'
             self.cmd = 'oc'
             return True
-        elif self.is_installed('kubernetes-master'):
+        elif self.master.is_installed('kubernetes-master'):
             self.cmd = 'kubectl'
             return True
         else:

@@ -63,10 +63,10 @@ class ovirt(Cluster):
             raise Exception('database query failed, return code: %s'
                             % res['status'])
 
-    def set_node_label(self, facts):
-        if facts['address'] == self.master.address:
+    def set_node_label(self, node):
+        if node.host_facts['address'] == self.master.address:
             return 'manager'
-        if 'hypervisor' in facts['release']:
+        if node.is_installed('ovirt-node-ng-nodectl'):
             return 'rhvh'
         else:
             return 'rhelh'

@@ -81,14 +81,6 @@ class Cluster():
                 return opt.value
         return False
 
-    def is_installed(self, pkg):
-        '''Checks to see if a package is installed'''
-        cmd = self.master.host_facts['package_manager']['query'] + pkg
-        res = self.exec_master_cmd(cmd)
-        if res['status'] == 0:
-            return True
-        return False
-
     def exec_master_cmd(self, cmd):
         '''Used to retrieve output from a (master) node in a cluster'''
         if self.config['need_sudo']:
@@ -159,7 +151,7 @@ class Cluster():
         Only the first cluster type to determine a match is run
         '''
         for pkg in self.packages:
-            if self.is_installed(pkg):
+            if self.master.is_installed(pkg):
                 return True
         return False
 
@@ -177,11 +169,11 @@ class Cluster():
             self.logger.error('Failed to get node list: %s' % e)
             raise
 
-    def get_node_label(self, facts):
+    def get_node_label(self, node):
         '''Used by SosNode() to retrieve the appropriate label from the cluster
         as set by set_node_label() in the cluster profile.
         '''
-        return self.set_node_label(facts)
+        return self.set_node_label(node)
 
     def set_node_label(self, facts):
         '''This may be overridden by clusters.

@@ -183,6 +183,14 @@ class SosNode():
         '''
         return LooseVersion(self.sos_info['version']) >= ver
 
+    def is_installed(self, pkg):
+        '''Checks if a given package is installed on the node'''
+        cmd = self.host_facts['package_manager']['query'] + pkg
+        res = self.run_command(cmd)
+        if res['status'] == 0:
+            return True
+        return False
+
     def run_command(self, cmd, timeout=180, get_pty=False):
         '''Runs a given cmd, either via the SSH session or locally'''
         if 'atomic' in cmd:
@@ -429,7 +437,7 @@ class SosNode():
     def determine_sos_label(self):
         '''Determine what, if any, label should be added to the sosreport'''
         label = ''
-        label += self.config['cluster'].get_node_label(self.host_facts)
+        label += self.config['cluster'].get_node_label(self)
 
         if self.config['label']:
             label += ('%s' % self.config['label'] if not label
