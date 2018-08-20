@@ -4,7 +4,9 @@
 sos-collector \- Collect sosreports from multiple (cluster) nodes
 .SH USAGE
 .B sos-collector
-    [\-a|\-\-all\-logs]
+    [\-a|\-\-all\-options]
+    [\-b|\-\-become]
+    [\-\-batch]
     [\-c CLUSTER_OPTIONS]
     [\-\-chroot CHROOT]
     [\-\-case\-id CASE_ID]
@@ -48,6 +50,12 @@ Enables all sosreport options.
 
 This does NOT enable all sos-collector options.
 .TP
+\fB\-b\fR, \fB\-\-become\fR
+Become the root user on the remote node when connecting as a non-root user.
+.TP
+\fB\-\-batch\fR
+Run in non-interactive mode. This will skip prompts for user input, with the
+exception of a prompt for the SSH password.
 \fB\-\-all\-logs\fR
 Sosreport option. Collects all logs regardless of size. 
 
