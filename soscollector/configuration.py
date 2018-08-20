@@ -73,6 +73,7 @@ class Configuration(dict):
         self['chroot'] = ''
         self['sysroot'] = ''
         self['sos_opt_line'] = ''
+        self['batch'] = False
 
     def parse_node_strings(self):
         '''

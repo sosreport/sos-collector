@@ -50,12 +50,15 @@ class SosCollector():
         self.retrieved = 0
         self.need_local_sudo = False
         if not self.config['list_options']:
-            if not self.config['tmp_dir']:
-                self.create_tmp_dir()
-            self._setup_logging()
-            self._load_clusters()
-            self._parse_options()
-            self.prep()
+            try:
+                if not self.config['tmp_dir']:
+                    self.create_tmp_dir()
+                self._setup_logging()
+                self._load_clusters()
+                self._parse_options()
+                self.prep()
+            except KeyboardInterrupt:
+                self._exit('Exiting on user cancel', 130)
         else:
             self._load_clusters()
 
@@ -262,12 +265,10 @@ this utility or remote systems that it connects to.
 
         self.console.info("\nsos-collector (version %s)\n" % __version__)
         intro_msg = self._fmt_msg(disclaimer % self.config['tmp_dir'])
-        intro_msg += "\nPress ENTER to continue, or CTRL-C to quit\n"
-        try:
-            input(intro_msg)
-        except KeyboardInterrupt:
-            self.console.error("Exiting on user cancel")
-            self._exit(130)
+        self.console.info(intro_msg)
+        prompt = "\nPress ENTER to continue, or CTRL-C to quit\n"
+        if not self.config['batch']:
+            input(prompt)
 
         if not self.config['password']:
             self.log_debug('password not specified, assuming SSH keys')
@@ -338,7 +339,7 @@ this utility or remote systems that it connects to.
 
         self.console.info('')
 
-        if not self.config['case_id']:
+        if not self.config['case_id'] and not self.config['batch']:
             msg = 'Please enter the case id you are collecting reports for: '
             self.config['case_id'] = input(msg)
 

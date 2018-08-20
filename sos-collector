@@ -36,6 +36,8 @@ if __name__ == '__main__':
     parser.add_argument('-b', '--become', action='store_true',
                         dest='become_root',
                         help='Become root on the remote nodes')
+    parser.add_argument('--batch', action='store_true',
+                        help='Do not prompt interactively (except passwords)')
     parser.add_argument('--case-id', help='Specify case number')
     parser.add_argument('--cluster-type',
                         help='Specify a type of cluster profile')
