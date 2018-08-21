@@ -374,7 +374,7 @@ this utility or remote systems that it connects to.
             self.master = SosNode(self.config['master'], self.config)
         except Exception as e:
             self.log_debug('Failed to connect to master: %s' % e)
-            self._exit('Could not connect to master node.\nAborting...')
+            self._exit('Could not connect to master node.\nAborting...', 1)
 
     def determine_cluster(self):
         '''This sets the cluster type and loads that cluster's cluster.
@@ -395,10 +395,6 @@ this utility or remote systems that it connects to.
                 self.log_info(
                     'Cluster type set to %s' % self.config['cluster_type'])
                 break
-                msg = ('Could not determine cluster cluster and no list of '
-                       'nodes was provided.\nAborting...'
-                       )
-                self._exit(msg, 1)
 
     def get_nodes_from_cluster(self):
         '''Collects the list of nodes from the determined cluster cluster'''
@@ -551,7 +547,7 @@ this utility or remote systems that it connects to.
             self.create_cluster_archive()
         else:
             msg = 'No sosreports were collected, nothing to archive...'
-            self._exit(msg)
+            self._exit(msg, 1)
         self.close_all_connections()
 
     def _collect(self, client):
@@ -598,7 +594,7 @@ this utility or remote systems that it connects to.
                 tar.close()
         except Exception as e:
             msg = 'Could not create archive: %s' % e
-            self._exit(msg)
+            self._exit(msg, 2)
 
     def cleanup(self):
         ''' Removes the tmp dir and all sosarchives therein.
