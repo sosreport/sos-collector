@@ -28,6 +28,7 @@ sos-collector \- Collect sosreports from multiple (cluster) nodes
     [\-t|\-\-threads THREADS]
     [\-\-timeout TIMEOUT]
     [\-\-tmp\-dir TMP_DIR]
+    [\-v|\-\-verbose]
     [\-\-verify]
     [\-z|\-\-compression-type COMPRESSION_TYPE]
 
@@ -195,6 +196,9 @@ Specify a temporary directory to save sos archives to. By default one will be cr
 /tmp and then removed after sos-collector has finished running.
 
 This is NOT the same as specifying a temporary directory for sosreport on the remote nodes.
+.TP
+\fB\-v\fR \fB\-\-verbose\fR
+Print debug information to screen.
 .TP
 \fB\-\-verfiy\fR
 Sosreport option. Passes the "--verify" option to sosreport on the nodes which 

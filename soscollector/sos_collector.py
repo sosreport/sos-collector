@@ -14,6 +14,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import fnmatch
+import inspect
 import logging
 import os
 import random
@@ -75,6 +76,9 @@ class SosCollector():
         hndlr.setLevel(logging.DEBUG)
         self.logger.addHandler(hndlr)
 
+        console = logging.StreamHandler(sys.stderr)
+        console.setFormatter(logging.Formatter('%(message)s'))
+
         # ui logging
         self.console = logging.getLogger('sos_collector_console')
         self.console.setLevel(logging.DEBUG)
@@ -82,15 +86,18 @@ class SosCollector():
             mode="w+",
             dir=self.config['tmp_dir'])
         chandler = logging.StreamHandler(self.console_log_file)
-        chandler.setFormatter(logging.Formatter(
-            '%(asctime)s %(levelname)s: %(message)s'))
+        cfmt = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
+        chandler.setFormatter(cfmt)
         self.console.addHandler(chandler)
 
         # also print to console
         ui = logging.StreamHandler()
         fmt = logging.Formatter('%(message)s')
         ui.setFormatter(fmt)
-        ui.setLevel(logging.INFO)
+        if self.config['verbose']:
+            ui.setLevel(logging.DEBUG)
+        else:
+            ui.setLevel(logging.INFO)
         self.console.addHandler(ui)
 
     def _exit(self, msg, error=1):
@@ -155,8 +162,11 @@ class SosCollector():
 
     def log_debug(self, msg):
         '''Log debug message to both console and log file'''
+        caller = inspect.stack()[1][3]
+        msg = '[sos_collector:%s] %s' % (caller, msg)
         self.logger.debug(msg)
-        self.console.debug(msg)
+        if self.config['verbose']:
+            self.console.debug(msg)
 
     def create_tmp_dir(self):
         '''Creates a temp directory to transfer sosreports to'''
@@ -263,6 +273,7 @@ No configuration changes will be made to the system running \
 this utility or remote systems that it connects to.
 """)
 
+        self.logger.debug('Executing %s' % ' '.join(s for s in sys.argv))
         self.console.info("\nsos-collector (version %s)\n" % __version__)
         intro_msg = self._fmt_msg(disclaimer % self.config['tmp_dir'])
         self.console.info(intro_msg)
@@ -297,9 +308,8 @@ this utility or remote systems that it connects to.
 
         if self.config['password']:
             self.log_debug('password specified, not using SSH keys')
-            msg = ('User requested password authentication.\nProvide the SSH '
-                   'password for user %s: ' % self.config['ssh_user']
-                   )
+            msg = ('Provide the SSH password for user %s: '
+                   % self.config['ssh_user'])
             self.config['password'] = getpass(prompt=msg)
         if self.config['master']:
             self.connect_to_master()
@@ -399,7 +409,7 @@ this utility or remote systems that it connects to.
     def get_nodes_from_cluster(self):
         '''Collects the list of nodes from the determined cluster cluster'''
         nodes = self.config['cluster']._get_nodes()
-        self.logger.info('Node list: %s' % nodes)
+        self.log_debug('Node list: %s' % nodes)
         return nodes
 
     def reduce_node_list(self):
@@ -418,7 +428,7 @@ this utility or remote systems that it connects to.
                 if n == self.master.hostname or n == self.config['master']:
                     self.node_list.remove(n)
         self.node_list = list(set(n for n in self.node_list if n))
-        self.logger.info('Node list reduced to %s' % self.node_list)
+        self.log_debug('Node list reduced to %s' % self.node_list)
 
     def compare_node_to_regex(self, node):
         '''Compares a discovered node name to a provided list of nodes from

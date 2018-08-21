@@ -14,12 +14,14 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import fnmatch
+import inspect
 import logging
 import paramiko
 import re
 import shutil
 import socket
 import subprocess
+import six
 import sys
 import time
 
@@ -57,8 +59,7 @@ class SosNode():
             self._load_sos_info()
 
     def _fmt_msg(self, msg):
-        return '{:<{}} : {}'.format(self._hostname,
-                                    self.config['hostlen'],
+        return '{:<{}} : {}'.format(self._hostname, self.config['hostlen'] + 1,
                                     msg)
 
     def file_exists(self, fname):
@@ -81,27 +82,41 @@ class SosNode():
     def _hostname(self):
         return self.hostname if self.hostname else self.address
 
+    def _sanitize_log_msg(self, msg):
+        '''Attempts to obfuscate sensitive information in log messages such as
+        passwords'''
+        reg = r'(?P<var>(pass|key|secret|PASS|KEY|SECRET).*?=)(?P<value>.*?\s)'
+        return re.sub(reg, r'\g<var>****** ', msg)
+
     def log_info(self, msg):
         '''Used to print and log info messages'''
-        self.logger.info(' %s: %s' % (self._hostname, msg))
+        caller = inspect.stack()[1][3]
+        lmsg = '[%s:%s] %s' % (self._hostname, caller, msg)
+        self.logger.info(lmsg)
         self.console.info(self._fmt_msg(msg))
 
     def log_error(self, msg):
         '''Used to print and log error messages'''
-        self.logger.error(' %s: %s' % (self._hostname, msg))
-        self.console.info(self._fmt_msg(msg))
+        caller = inspect.stack()[1][3]
+        lmsg = '[%s:%s] %s' % (self._hostname, caller, msg)
+        self.logger.error(lmsg)
+        self.console.error(self._fmt_msg(msg))
 
     def log_debug(self, msg):
         '''Used to print and log debug messages'''
-        self.logger.debug(' %s: %s' % (self._hostname, msg))
-        self.console.debug(self._fmt_msg(msg))
+        msg = self._sanitize_log_msg(msg)
+        caller = inspect.stack()[1][3]
+        msg = '[%s:%s] %s' % (self._hostname, caller, msg)
+        self.logger.debug(msg)
+        if self.config['verbose']:
+            self.console.debug(msg)
 
     def get_hostname(self):
         '''Get the node's hostname'''
         sout = self.run_command('hostname')
         self.hostname = sout['stdout'].strip()
-        self.logger.debug(
-            'Hostname for %s set to %s' % (self.address, self.hostname))
+        self.log_debug(
+            'Hostname set to %s' % self.hostname)
 
     def _format_cmd(self, cmd):
         '''If we need to provide a sudo or root password to a command, then
@@ -117,9 +132,9 @@ class SosNode():
         '''Formats the returned output from a command into a dict'''
         c = {}
         c['status'] = rc
-        if isinstance(stdout, (bytes, unicode)):
+        if isinstance(stdout, six.string_types):
             stdout = [str(stdout)]
-        if isinstance(stderr, (bytes, unicode)):
+        if isinstance(stderr, six.string_types):
             stderr = [str(stderr)]
         if stdout:
             stdout = ''.join(s for s in stdout) or True
@@ -193,6 +208,7 @@ class SosNode():
 
     def run_command(self, cmd, timeout=180, get_pty=False):
         '''Runs a given cmd, either via the SSH session or locally'''
+        self.log_debug('Running command %s' % cmd)
         if 'atomic' in cmd:
             get_pty = True
         if not self.local:
@@ -228,7 +244,6 @@ class SosNode():
     def sosreport(self):
         '''Run a sosreport on the node, then collect it'''
         self.finalize_sos_cmd()
-        self.logger.debug('Running sosreport on %s' % self.address)
         path = self.execute_sos_command()
         if path:
             self.finalize_sos_path(path)
@@ -246,19 +261,19 @@ class SosNode():
             self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             self.client.load_system_host_keys()
             if not self.config['password']:
-                self.logger.debug(
+                self.log_debug(
                     'Opening passwordless session to %s' % self.address)
                 self.client.connect(self.address,
                                     username=self.config['ssh_user'],
                                     timeout=15)
             else:
-                self.logger.debug(
+                self.log_debug(
                     'Opening session to %s with password' % self.address)
                 self.client.connect(self.address,
                                     username=self.config['ssh_user'],
                                     password=self.config['password'],
                                     timeout=15)
-            self.logger.debug('%s successfully connected' % self._hostname)
+            self.log_debug('%s successfully connected' % self._hostname)
             return True
         except paramiko.AuthenticationException:
             if not self.config['password']:
@@ -297,8 +312,7 @@ class SosNode():
         clusters to change the sosreport command'''
         self.get_release()
         self.set_package_manager()
-        self.logger.debug('%s facts found to be %s'
-                          % (self._hostname, self.host_facts))
+        self.log_debug('Facts found to be %s' % self.host_facts)
 
     def set_sos_prefix(self):
         '''Sets a prefix to any sos related commands run on the node.
@@ -403,6 +417,12 @@ class SosNode():
             self.sos_cmd = '%s %s ' % (self.sos_cmd, label)
 
         if self.config['only_plugins']:
+            plugs = [o for o in self.config['only_plugins']
+                     if self._plugin_exists(o)]
+            if len(plugs) != len(self.config['only_plugins']):
+                not_only = list(set(self.config['only_plugins']) - set(plugs))
+                self.log_debug('Requested plugins %s were requested to be '
+                               'enabled but do not exist' % not_only)
             only = self._fmt_sos_opt_list(self.config['only_plugins'])
             if only:
                 self.sos_cmd += '--only-plugins=%s ' % only
@@ -412,6 +432,10 @@ class SosNode():
             # only run skip-plugins for plugins that are enabled
             skip = [o for o in self.config['skip_plugins']
                     if self._check_enabled(o)]
+            if len(skip) != len(self.config['skip_plugins']):
+                not_skip = list(set(self.config['skip_plugins']) - set(skip))
+                self.log_debug('Requested to skip plugins %s, but plugins are '
+                               'already not enabled' % not_skip)
             skipln = self._fmt_sos_opt_list(skip)
             if skipln:
                 self.sos_cmd += '--skip-plugins=%s ' % skipln
@@ -420,7 +444,11 @@ class SosNode():
             # only run enable for plugins that are disabled
             opts = [o for o in self.config['enable_plugins']
                     if o not in self.config['skip_plugins']
-                    and self._check_disabled(o)]
+                    and self._check_disabled(o) and self._plugin_exists(o)]
+            if len(opts) != len(self.config['enable_plugins']):
+                not_on = list(set(self.config['enable_plugins']) - set(opts))
+                self.log_debug('Requested to enable plugins %s, but plugins '
+                               'are already enabled or do not exist' % not_on)
             enable = self._fmt_sos_opt_list(opts)
             if enable:
                 self.sos_cmd += '--enable-plugins=%s ' % enable
@@ -432,7 +460,7 @@ class SosNode():
             if opts:
                 self.sos_cmd += '-k %s' % ','.join(o for o in opts)
 
-        self.log_debug('final sos command set to %s' % self.sos_cmd)
+        self.log_debug('Final sos command set to %s' % self.sos_cmd)
 
     def determine_sos_label(self):
         '''Determine what, if any, label should be added to the sosreport'''
@@ -446,6 +474,7 @@ class SosNode():
         if not label:
             return None
 
+        self.log_debug('Label for sosreport set to %s' % label)
         if self.check_sos_version('3.6'):
             lcmd = '--label'
         else:
@@ -460,7 +489,7 @@ class SosNode():
         if pstrip:
             path = path.replace(pstrip, '')
         path = path.split()[0]
-        self.logger.debug('Final sos path for %s: %s' % (self.address, path))
+        self.log_debug('Final sos path: %s' % path)
         self.sos_path = path
         self.archive = path.split('/')[-1]
 
@@ -476,7 +505,6 @@ class SosNode():
 
     def execute_sos_command(self):
         '''Run sosreport and capture the resulting file path'''
-        self.logger.info('Running sosreport on %s' % self.address)
         self.log_info("Generating sosreport...")
         try:
             path = False
@@ -572,7 +600,7 @@ class SosNode():
             return True
         except Exception as e:
             msg = 'Error collecting additional data from master: %s' % e
-            self.console.error(msg)
+            self.log_error(msg)
             return False
 
     def make_archive_readable(self, filepath):
@@ -587,5 +615,5 @@ class SosNode():
             return True
         else:
             msg = "Exception while making %s readable. Return code was %s"
-            self.logger.error(msg % (filepath, res['status']))
+            self.log_error(msg % (filepath, res['status']))
             raise Exception

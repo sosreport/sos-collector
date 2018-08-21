@@ -55,7 +55,7 @@ class Cluster():
             self.options.append(option)
 
     def _fmt_msg(self, msg):
-        return '[ %s ] %s' % (self.cluster_type, msg)
+        return '[%s] %s' % (self.cluster_type, msg)
 
     def log_info(self, msg):
         '''Used to print info messages'''
@@ -70,7 +70,8 @@ class Cluster():
     def log_debug(self, msg):
         '''Used to print debug messages'''
         self.logger.debug(self._fmt_msg(msg))
-        self.console.debug(self._fmt_msg(msg))
+        if self.config['verbose']:
+            self.console.debug(self._fmt_msg(msg))
 
     def get_option(self, option):
         '''This is used to by clusters to check if a cluster option was

@@ -74,6 +74,7 @@ class Configuration(dict):
         self['sysroot'] = ''
         self['sos_opt_line'] = ''
         self['batch'] = False
+        self['verbose'] = False
 
     def parse_node_strings(self):
         '''
