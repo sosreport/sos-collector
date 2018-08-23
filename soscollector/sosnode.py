@@ -206,8 +206,14 @@ class SosNode():
             return True
         return False
 
-    def run_command(self, cmd, timeout=180, get_pty=False):
+    def run_command(self, cmd, timeout=180, get_pty=False, need_root=False):
         '''Runs a given cmd, either via the SSH session or locally'''
+        if cmd.startswith('sosreport'):
+            cmd = cmd.replace('sosreport', '/usr/sbin/sosreport')
+            need_root = True
+        if need_root:
+            get_pty = True
+            cmd = self._format_cmd(cmd)
         self.log_debug('Running command %s' % cmd)
         if 'atomic' in cmd:
             get_pty = True
@@ -215,13 +221,17 @@ class SosNode():
             now = time.time()
             sin, sout, serr = self.client.exec_command(cmd, timeout=timeout,
                                                        get_pty=get_pty)
-            if self.config['become_root']:
-                sin.write(self.config['root_password'] + '\n')
-                sin.flush()
-            if self.config['need_sudo']:
-                sin.write(self.config['sudo_pw'] + '\n')
-                sin.flush()
             while time.time() < now + timeout:
+                if not sout.channel.exit_status_ready():
+                    time.sleep(0.1)
+                    if self.config['become_root'] and need_root:
+                        sin.write(self.config['root_password'] + '\n')
+                        sin.flush()
+                        need_root = False
+                    if self.config['need_sudo'] and need_root:
+                        sin.write(self.config['sudo_pw'] + '\n')
+                        sin.flush()
+                        need_root = False
                 if sout.channel.exit_status_ready():
                     rc = sout.channel.recv_exit_status()
                     return self._fmt_output(sout, serr, rc)
@@ -244,13 +254,16 @@ class SosNode():
     def sosreport(self):
         '''Run a sosreport on the node, then collect it'''
         self.finalize_sos_cmd()
-        path = self.execute_sos_command()
-        if path:
-            self.finalize_sos_path(path)
-        else:
-            self.log_error('Unable to determine path of sos archive')
-        if self.sos_path:
-            self.retrieved = self.retrieve_sosreport()
+        try:
+            path = self.execute_sos_command()
+            if path:
+                self.finalize_sos_path(path)
+            else:
+                self.log_error('Unable to determine path of sos archive')
+            if self.sos_path:
+                self.retrieved = self.retrieve_sosreport()
+        except Exception:
+            pass
         self.cleanup()
 
     def open_ssh_session(self):
@@ -403,7 +416,8 @@ class SosNode():
     def finalize_sos_cmd(self):
         '''Use host facts and compare to the cluster type to modify the sos
         command if needed'''
-        self.sos_cmd = self._format_cmd(self.config['sos_cmd'])
+        self.sos_cmd = self.config['sos_cmd']
+
         prefix = self.set_sos_prefix()
         if prefix:
             self.sos_cmd = prefix + self.sos_cmd
@@ -496,6 +510,9 @@ class SosNode():
     def determine_sos_error(self, rc, stdout):
         if rc == -1:
             return 'sosreport process received SIGKILL on node'
+        if rc == 1:
+            if 'sudo' in stdout:
+                return 'sudo attempt failed'
         if rc == 127:
             return 'sosreport terminated unexpectedly. Check disk space'
         if len(stdout) > 0:
@@ -510,7 +527,7 @@ class SosNode():
             path = False
             res = self.run_command(self.sos_cmd,
                                    timeout=self.config['timeout'],
-                                   get_pty=True)
+                                   get_pty=True, need_root=True)
             if res['status'] == 0:
                 for line in res['stdout'].splitlines():
                     if fnmatch.fnmatch(line, '*sosreport-*tar*'):
@@ -520,12 +537,14 @@ class SosNode():
                 self.log_debug("Error running sosreport. rc = %s msg = %s"
                                % (res['status'], res['stdout'] or
                                   res['stderr']))
-                self.log_error('Error running sosreport: %s' % err)
+                raise Exception(err)
             return path
         except socket.timeout:
             self.log_error('Timeout exceeded')
+            raise
         except Exception as e:
             self.log_error('Error running sosreport: %s' % e)
+            raise
 
     def retrieve_sosreport(self):
         '''Collect the sosreport archive from the node'''
@@ -568,8 +587,10 @@ class SosNode():
     def remove_sos_archive(self):
         '''Remove the sosreport archive from the node, since we have
         collected it and it would be wasted space otherwise'''
+        if self.sos_path is None:
+            return
         try:
-            cmd = self._format_cmd("rm -f %s" % self.sos_path)
+            cmd = "rm -f %s" % self.sos_path
             res = self.run_command(cmd)
         except Exception as e:
             self.log_error('Failed to remove sosreport on host: %s' % e)
@@ -609,8 +630,8 @@ class SosNode():
 
         This is only used when we're not connecting as root.
         '''
-        cmd = self._format_cmd('chmod +r %s' % filepath)
-        res = self.run_command(cmd, timeout=10, get_pty=True)
+        cmd = 'chmod +r %s' % filepath
+        res = self.run_command(cmd, timeout=10, get_pty=True, need_root=True)
         if res['status'] == 0:
             return True
         else:

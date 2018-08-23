@@ -82,17 +82,12 @@ class Cluster():
                 return opt.value
         return False
 
-    def exec_master_cmd(self, cmd):
+    def exec_master_cmd(self, cmd, need_root=False):
         '''Used to retrieve output from a (master) node in a cluster'''
-        if self.config['need_sudo']:
-            cmd = "sudo -S %s" % cmd
-        if self.config['become_root']:
-            cmd = "su -c '%s'" % cmd
         self.logger.debug('Running %s on %s' % (cmd, self.master.address))
-        res = self.master.run_command(cmd, get_pty=True)
+        res = self.master.run_command(cmd, get_pty=True, need_root=need_root)
         if res['stdout']:
-            if 'password' in res['stdout'][0].lower():
-                res['stdout'].pop(0)
+            res['stdout'] = res['stdout'].replace('Password:', '')
         return res
 
     def setup(self):

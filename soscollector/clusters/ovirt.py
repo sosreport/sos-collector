@@ -55,7 +55,7 @@ class ovirt(Cluster):
     def get_nodes(self):
         if self.get_option('no-hypervisors'):
             return []
-        res = self.exec_master_cmd(self.dbcmd)
+        res = self.exec_master_cmd(self.dbcmd, need_root=True)
         if res['status'] == 0:
             nodes = res['stdout'].splitlines()[2:-1]
             return [n.split('(')[0].strip() for n in nodes]
@@ -79,13 +79,16 @@ class ovirt(Cluster):
     def parse_db_conf(self):
         conf = {}
         engconf = '/etc/ovirt-engine/engine.conf.d/10-setup-database.conf'
-        res = self.exec_master_cmd('cat %s' % engconf)
+        res = self.exec_master_cmd('cat %s' % engconf, need_root=True)
         if res['status'] == 0:
             config = res['stdout'].splitlines()
         for line in config:
-            k = str(line.split('=')[0])
-            v = str(line.split('=')[1].replace('"', ''))
-            conf[k] = v
+            try:
+                k = str(line.split('=')[0])
+                v = str(line.split('=')[1].replace('"', ''))
+                conf[k] = v
+            except IndexError:
+                pass
         return conf
 
     def collect_database(self):
@@ -103,7 +106,7 @@ class ovirt(Cluster):
         cmd = ('PGPASSWORD={} /usr/sbin/sosreport --name=postgresql '
                '--batch -o postgresql {}'
                ).format(self.conf['ENGINE_DB_PASSWORD'], sos_opt)
-        db_sos = self.exec_master_cmd(cmd)
+        db_sos = self.exec_master_cmd(cmd, need_root=True)
         for line in db_sos['stdout'].splitlines():
             if fnmatch.fnmatch(line, '*sosreport-*tar*'):
                 return line.strip()

@@ -299,18 +299,23 @@ this utility or remote systems that it connects to.
                               ' Ignoring request to change user on node')
                 self.config['become_root'] = False
 
-        if self.config['need_sudo'] and not self.config['become_root']:
-            self.log_debug('non-root user specified, will request '
-                           'sudo password')
-            msg = ('A non-root user has been provided. Provide sudo password'
-                   ' for %s on remote nodes: ' % self.config['ssh_user'])
-            self.config['sudo_pw'] = getpass(prompt=msg)
-
         if self.config['password']:
             self.log_debug('password specified, not using SSH keys')
             msg = ('Provide the SSH password for user %s: '
                    % self.config['ssh_user'])
             self.config['password'] = getpass(prompt=msg)
+
+        if self.config['need_sudo'] and not self.config['become_root']:
+            if not self.config['password']:
+                self.log_debug('non-root user specified, will request '
+                               'sudo password')
+                msg = ('A non-root user has been provided. Provide sudo '
+                       'password for %s on remote nodes: '
+                       % self.config['ssh_user'])
+                self.config['sudo_pw'] = getpass(prompt=msg)
+            else:
+                self.config['sudo_pw'] = self.config['password']
+
         if self.config['master']:
             self.connect_to_master()
             self.config['no_local'] = True
