@@ -43,7 +43,8 @@ class SosNode():
             'version': None,
             'enabled': [],
             'disabled': [],
-            'options': []
+            'options': [],
+            'presets': []
         }
         filt = ['localhost', '127.0.0.1', self.config['hostname']]
         self.logger = logging.getLogger('sos_collector')
@@ -160,26 +161,41 @@ class SosNode():
             self.connected = False
             return False
         cmd = prefix + 'sosreport -l'
-        self.sosinfo = self.run_command(cmd)
-        if self.sosinfo['status'] == 0:
-            ENABLED = 'The following plugins are currently enabled:'
-            DISABLED = 'The following plugins are currently disabled:'
-            OPTIONS = 'The following plugin options are available:'
-            PROFILES = 'Profiles:'
+        sosinfo = self.run_command(cmd)
+        if sosinfo['status'] == 0:
+            self._load_sos_plugins(sosinfo['stdout'])
+        if self.check_sos_version('3.6'):
+            self._load_sos_presets()
 
-            enablereg = ENABLED + '(.*?)' + DISABLED
-            disreg = DISABLED + '(.*?)' + OPTIONS
-            optreg = OPTIONS + '(.*?)' + PROFILES
-            proreg = PROFILES + '(.*?)' + '\n\n'
+    def _load_sos_presets(self):
+        prefix = self.set_sos_prefix()
+        cmd = prefix + 'sosreport --list-presets'
+        res = self.run_command(cmd)
+        if res['status'] == 0:
+            for line in res['stdout'].splitlines():
+                if line.strip().startswith('name:'):
+                    pname = line.split('name:')[1].strip()
+                    self.sos_info['presets'].append(pname)
 
-            self.sos_info['enabled'] = self._regex_sos_help(enablereg)
-            self.sos_info['disabled'] = self._regex_sos_help(disreg)
-            self.sos_info['options'] = self._regex_sos_help(optreg)
-            self.sos_info['profiles'] = self._regex_sos_help(proreg, True)
+    def _load_sos_plugins(self, sosinfo):
+        ENABLED = 'The following plugins are currently enabled:'
+        DISABLED = 'The following plugins are currently disabled:'
+        OPTIONS = 'The following plugin options are available:'
+        PROFILES = 'Profiles:'
 
-    def _regex_sos_help(self, regex, is_list=False):
+        enablereg = ENABLED + '(.*?)' + DISABLED
+        disreg = DISABLED + '(.*?)' + OPTIONS
+        optreg = OPTIONS + '(.*?)' + PROFILES
+        proreg = PROFILES + '(.*?)' + '\n\n'
+
+        self.sos_info['enabled'] = self._regex_sos_help(enablereg, sosinfo)
+        self.sos_info['disabled'] = self._regex_sos_help(disreg, sosinfo)
+        self.sos_info['options'] = self._regex_sos_help(optreg, sosinfo)
+        self.sos_info['profiles'] = self._regex_sos_help(proreg, sosinfo, True)
+
+    def _regex_sos_help(self, regex, sosinfo, is_list=False):
         res = []
-        for result in re.findall(regex, self.sosinfo['stdout'], re.S):
+        for result in re.findall(regex, sosinfo, re.S):
             for line in result.splitlines():
                 if not is_list:
                     try:
@@ -254,6 +270,7 @@ class SosNode():
     def sosreport(self):
         '''Run a sosreport on the node, then collect it'''
         self.finalize_sos_cmd()
+        self.log_debug('Final sos command set to %s' % self.sos_cmd)
         try:
             path = self.execute_sos_command()
             if path:
@@ -378,6 +395,10 @@ class SosNode():
                                                   'query': 'rpm -q '
                                                   }
 
+    def _preset_exists(self, preset):
+        '''Verifies if the given preset exists on the node'''
+        return preset in self.sos_info['presets']
+
     def _plugin_exists(self, plugin):
         '''Verifies if the given plugin exists on the node'''
         return any(plugin in s for s in [self.sos_info['enabled'],
@@ -474,7 +495,12 @@ class SosNode():
             if opts:
                 self.sos_cmd += '-k %s' % ','.join(o for o in opts)
 
-        self.log_debug('Final sos command set to %s' % self.sos_cmd)
+        if self.config['preset']:
+            if self._preset_exists(self.config['preset']):
+                self.sos_cmd += ' --preset=%s' % self.config['preset']
+            else:
+                self.log_debug('Requested to enable preset %s but preset does '
+                               'not exist on node' % self.config['preset'])
 
     def determine_sos_label(self):
         '''Determine what, if any, label should be added to the sosreport'''
@@ -631,7 +657,7 @@ class SosNode():
         This is only used when we're not connecting as root.
         '''
         cmd = 'chmod +r %s' % filepath
-        res = self.run_command(cmd, timeout=10, get_pty=True, need_root=True)
+        res = self.run_command(cmd, timeout=10, need_root=True)
         if res['status'] == 0:
             return True
         else:
