@@ -244,7 +244,7 @@ class SosNode():
                         sin.write(self.config['root_password'] + '\n')
                         sin.flush()
                         need_root = False
-                    if self.config['need_sudo'] and need_root:
+                    if self.config['sudo_pw'] and need_root:
                         sin.write(self.config['sudo_pw'] + '\n')
                         sin.flush()
                         need_root = False
