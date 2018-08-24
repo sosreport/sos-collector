@@ -22,8 +22,7 @@ from getpass import getpass
 
 class ovirt(Cluster):
 
-    packages = ('ovirt-engine', 'rhevm')
-    sos_plugins = ['ovirt']
+    packages = ('ovirt-engine',)
 
     option_list = [
         ('no-database', False, 'Do not collect a database dump'),
@@ -62,14 +61,6 @@ class ovirt(Cluster):
         else:
             raise Exception('database query failed, return code: %s'
                             % res['status'])
-
-    def set_node_label(self, node):
-        if node.host_facts['address'] == self.master.address:
-            return 'manager'
-        if node.is_installed('ovirt-node-ng-nodectl'):
-            return 'rhvh'
-        else:
-            return 'rhelh'
 
     def run_extra_cmd(self):
         if not self.get_option('no-database'):
@@ -112,3 +103,17 @@ class ovirt(Cluster):
                 return line.strip()
         self.log_error('Failed to gather database dump')
         return False
+
+
+class rhv(ovirt):
+
+    packages = ('rhevm', 'rhvm')
+    sos_preset = 'rhv'
+
+    def set_node_label(self, node):
+        if node.host_facts['address'] == self.master.address:
+            return 'manager'
+        if node.is_installed('ovirt-node-ng-nodectl'):
+            return 'rhvh'
+        else:
+            return 'rhelh'
