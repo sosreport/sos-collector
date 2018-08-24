@@ -12,6 +12,7 @@ sos-collector \- Collect sosreports from multiple (cluster) nodes
     [\-\-case\-id CASE_ID]
     [\-\-cluster\-type CLUSTER_TYPE]
     [\-e ENABLE_PLUGINS]
+    [\-\-insecure-sudo]
     [\-k PLUGIN_OPTION]
     [\-\-label LABEL]
     [\-n SKIP_PLUGINS]
@@ -94,6 +95,13 @@ that profile.
 Sosreport option. Use this to enable a plugin that would otherwise not be run.
 
 This option supports providing a comma-delimited list of plugins.
+.TP
+\fB\-\-insecure-sudo\fR
+Use this option when connecting as a non-root user that has passwordless sudo
+configured.
+
+If this option is omitted and a bogus sudo password is supplied, collection of
+sosreports may exhibit unexpected behavior and/or fail entirely.
 .TP
 \fB\-k\fR PLUGIN_OPTION, \fB\-\-plugin\-option\fR PLUGIN_OPTION
 Sosreport option. Set a plugin option to a particular value. This takes the form of

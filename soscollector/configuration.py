@@ -76,6 +76,7 @@ class Configuration(dict):
         self['batch'] = False
         self['verbose'] = False
         self['preset'] = ''
+        self['insecure_sudo'] = False
 
     def parse_node_strings(self):
         '''

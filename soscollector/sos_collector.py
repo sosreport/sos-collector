@@ -287,6 +287,24 @@ this utility or remote systems that it connects to.
                    'nodes unless the --password option is provided.\n')
             self.console.info(self._fmt_msg(msg))
 
+        if self.config['password']:
+            self.log_debug('password specified, not using SSH keys')
+            msg = ('Provide the SSH password for user %s: '
+                   % self.config['ssh_user'])
+            self.config['password'] = getpass(prompt=msg)
+
+        if self.config['need_sudo'] and not self.config['insecure_sudo']:
+            if not self.config['password']:
+                self.log_debug('non-root user specified, will request '
+                               'sudo password')
+                msg = ('A non-root user has been provided. Provide sudo '
+                       'password for %s on remote nodes: '
+                       % self.config['ssh_user'])
+                self.config['sudo_pw'] = getpass(prompt=msg)
+            else:
+                if not self.config['insecure_sudo']:
+                    self.config['sudo_pw'] = self.config['password']
+
         if self.config['become_root']:
             if not self.config['ssh_user'] == 'root':
                 self.log_debug('non-root user asking to become root remotely')
@@ -298,23 +316,6 @@ this utility or remote systems that it connects to.
                 self.log_info('Option to become root but ssh user is root.'
                               ' Ignoring request to change user on node')
                 self.config['become_root'] = False
-
-        if self.config['password']:
-            self.log_debug('password specified, not using SSH keys')
-            msg = ('Provide the SSH password for user %s: '
-                   % self.config['ssh_user'])
-            self.config['password'] = getpass(prompt=msg)
-
-        if self.config['need_sudo'] and not self.config['become_root']:
-            if not self.config['password']:
-                self.log_debug('non-root user specified, will request '
-                               'sudo password')
-                msg = ('A non-root user has been provided. Provide sudo '
-                       'password for %s on remote nodes: '
-                       % self.config['ssh_user'])
-                self.config['sudo_pw'] = getpass(prompt=msg)
-            else:
-                self.config['sudo_pw'] = self.config['password']
 
         if self.config['master']:
             self.connect_to_master()
