@@ -23,6 +23,7 @@ class Cluster():
 
     option_list = []
     packages = ('',)
+    sos_plugins = []
     sos_options = {}
     sos_preset = ''
 
@@ -41,7 +42,6 @@ class Cluster():
         self.config = config
         self.cluster_type = self.__class__.__name__
         self.node_list = None
-        sos_plugins = []
         self.logger = logging.getLogger('sos_collector')
         self.console = logging.getLogger('sos_collector_console')
         self.options = []
