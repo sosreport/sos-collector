@@ -262,8 +262,8 @@ to manage the SSH connections to remote systems. If this \
 library is not acceptable for use in your environment, \
 you should not use this utility.
 
-An archive of collected sosreport tarballs will be generated in \
-%s and may be provided to an appropriate support representative.
+An archive of sosreport tarballs collected from the nodes will be \
+generated in %s and may be provided to an appropriate support representative.
 
 The generated archive may contain data considered sensitive \
 and its content should be reviewed by the originating \
