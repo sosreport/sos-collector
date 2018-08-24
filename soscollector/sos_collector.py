@@ -28,7 +28,6 @@ import subprocess
 import sys
 
 from datetime import datetime
-from collections import OrderedDict
 from concurrent.futures import ThreadPoolExecutor
 from .sosnode import SosNode
 from distutils.sysconfig import get_python_lib
@@ -55,6 +54,7 @@ class SosCollector():
                 if not self.config['tmp_dir']:
                     self.create_tmp_dir()
                 self._setup_logging()
+                self.log_debug('Executing %s' % ' '.join(s for s in sys.argv))
                 self._load_clusters()
                 self._parse_options()
                 self.prep()
@@ -211,14 +211,16 @@ class SosCollector():
             path = p + '/soscollector/clusters/'
         else:
             path = 'soscollector/clusters'
-        self.clusters = OrderedDict()
+        self.clusters = {}
         sys.path.insert(0, path)
         for f in sorted(os.listdir(path)):
             fname, ext = os.path.splitext(f)
             if ext == '.py' and fname not in ['__init__', 'cluster']:
-                mod = __import__(fname)
-                class_ = getattr(mod, fname)
-                self.clusters[fname] = class_(self.config)
+                mods = inspect.getmembers(__import__(fname), inspect.isclass)
+                for cluster in mods[1:]:
+                    self.clusters[cluster[0]] = cluster[1](self.config)
+        self.log_debug('Found cluster profiles: %s'
+                       % list(self.clusters.keys()))
         sys.path.pop(0)
 
     def _get_archive_name(self):
@@ -272,8 +274,6 @@ organization before being passed to any third party.
 No configuration changes will be made to the system running \
 this utility or remote systems that it connects to.
 """)
-
-        self.logger.debug('Executing %s' % ' '.join(s for s in sys.argv))
         self.console.info("\nsos-collector (version %s)\n" % __version__)
         intro_msg = self._fmt_msg(disclaimer % self.config['tmp_dir'])
         self.console.info(intro_msg)

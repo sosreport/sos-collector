@@ -18,23 +18,15 @@ from soscollector.clusters import Cluster
 
 class kubernetes(Cluster):
 
+    packages = ('kubernetes-master',)
     sos_plugins = ['kubernetes']
     sos_options = {'kubernetes.all': 'on'}
+
+    cmd = 'kubectl'
 
     option_list = [
         ('label', '', 'Restrict nodes to those with matching label')
     ]
-
-    def check_enabled(self):
-        if self.master.is_installed('atomic-openshift-master'):
-            self.cluster_type = 'openshift'
-            self.cmd = 'oc'
-            return True
-        elif self.master.is_installed('kubernetes-master'):
-            self.cmd = 'kubectl'
-            return True
-        else:
-            return False
 
     def get_nodes(self):
         self.cmd += ' get nodes'
@@ -47,3 +39,9 @@ class kubernetes(Cluster):
             return nodes
         else:
             raise Exception('Node enumeration did not return usable output')
+
+
+class openshift(kubernetes):
+
+    packages = ('atomic-openshift',)
+    cmd = 'oc'
