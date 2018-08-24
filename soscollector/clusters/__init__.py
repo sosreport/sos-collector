@@ -24,6 +24,7 @@ class Cluster():
     option_list = []
     packages = ('',)
     sos_options = {}
+    sos_preset = ''
 
     def __init__(self, config):
         '''This is the class that cluster profile should subclass in order to
@@ -187,6 +188,13 @@ class Cluster():
 
         This will NOT override user supplied options.
         '''
+        if self.sos_preset:
+            if not self.config['preset']:
+                self.config['preset'] = self.sos_preset
+            else:
+                self.log_debug('Cluster specified preset %s but user has also '
+                               'defined a preset. Using user specification.'
+                               % self.sos_preset)
         if self.sos_plugins:
             for plug in self.sos_plugins:
                 if plug not in self.config['sos_cmd']:

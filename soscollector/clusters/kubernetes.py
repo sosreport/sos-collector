@@ -44,4 +44,5 @@ class kubernetes(Cluster):
 class openshift(kubernetes):
 
     packages = ('atomic-openshift',)
+    sos_preset = 'ocp'
     cmd = 'oc'
