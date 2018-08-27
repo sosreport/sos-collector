@@ -367,17 +367,20 @@ this utility or remote systems that it connects to.
                            "sos command set to %s" % self.config['sos_cmd'])
             return True
         if self.config['case_id']:
-            self.config['sos_cmd'] += '--case-id=%s ' % self.config['case_id']
+            self.config['sos_cmd'] += ' --case-id=%s' % self.config['case_id']
         if self.config['alloptions']:
-            self.config['sos_cmd'] += '--alloptions '
+            self.config['sos_cmd'] += ' --alloptions'
         if self.config['verify']:
-            self.config['sos_cmd'] += '--verify '
+            self.config['sos_cmd'] += ' --verify'
+        if self.config['log_size']:
+            self.config['sos_cmd'] += (' --log-size=%s'
+                                       % self.config['log_size'])
         if self.config['sysroot']:
-            self.config['sos_cmd'] += '-s %s ' % self.config['sysroot']
+            self.config['sos_cmd'] += ' -s %s' % self.config['sysroot']
         if self.config['chroot']:
-            self.config['sos_cmd'] += '-c %s ' % self.config['chroot']
+            self.config['sos_cmd'] += ' -c %s' % self.config['chroot']
         if self.config['compression']:
-            self.config['sos_cmd'] += '-z %s' % self.config['compression']
+            self.config['sos_cmd'] += ' -z %s' % self.config['compression']
         if self.config['cluster_type']:
             self.config['cluster'].modify_sos_cmd()
         self.log_debug('Initial sos cmd set to %s' % self.config['sos_cmd'])

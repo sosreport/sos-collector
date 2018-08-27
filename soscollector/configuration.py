@@ -36,7 +36,7 @@ class Configuration(dict):
         self['strip_sos_path'] = ''
         self['ssh_port'] = '22'
         self['ssh_user'] = 'root'
-        self['sos_cmd'] = 'sosreport --batch '
+        self['sos_cmd'] = 'sosreport --batch'
         self['no_local'] = False
         self['tmp_dir'] = None
         self['out_dir'] = '/var/tmp/'
@@ -77,6 +77,7 @@ class Configuration(dict):
         self['verbose'] = False
         self['preset'] = ''
         self['insecure_sudo'] = False
+        self['log_size'] = 0
 
     def parse_node_strings(self):
         '''

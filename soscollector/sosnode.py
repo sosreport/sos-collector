@@ -449,7 +449,7 @@ class SosNode():
 
         label = self.determine_sos_label()
         if label:
-            self.sos_cmd = '%s %s ' % (self.sos_cmd, label)
+            self.sos_cmd = ' %s %s' % (self.sos_cmd, label)
 
         if self.config['only_plugins']:
             plugs = [o for o in self.config['only_plugins']
@@ -460,7 +460,7 @@ class SosNode():
                                'enabled but do not exist' % not_only)
             only = self._fmt_sos_opt_list(self.config['only_plugins'])
             if only:
-                self.sos_cmd += '--only-plugins=%s ' % only
+                self.sos_cmd += ' --only-plugins=%s' % only
             return True
 
         if self.config['skip_plugins']:
@@ -473,7 +473,7 @@ class SosNode():
                                'already not enabled' % not_skip)
             skipln = self._fmt_sos_opt_list(skip)
             if skipln:
-                self.sos_cmd += '--skip-plugins=%s ' % skipln
+                self.sos_cmd += ' --skip-plugins=%s' % skipln
 
         if self.config['enable_plugins']:
             # only run enable for plugins that are disabled
@@ -486,14 +486,14 @@ class SosNode():
                                'are already enabled or do not exist' % not_on)
             enable = self._fmt_sos_opt_list(opts)
             if enable:
-                self.sos_cmd += '--enable-plugins=%s ' % enable
+                self.sos_cmd += ' --enable-plugins=%s' % enable
 
         if self.config['plugin_options']:
             opts = [o for o in self.config['plugin_options']
                     if self._plugin_exists(o.split('.')[0])
                     and self._plugin_option_exists(o.split('=')[0])]
             if opts:
-                self.sos_cmd += '-k %s' % ','.join(o for o in opts)
+                self.sos_cmd += ' -k %s' % ','.join(o for o in opts)
 
         if self.config['preset']:
             if self._preset_exists(self.config['preset']):
