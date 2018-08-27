@@ -32,7 +32,7 @@ class pacemaker(Cluster):
                            'cluster running on this node?')
             return []
         if 'node names do not match' in self.res['stdout']:
-            self.log_info('NOTE: node name mismatch reported. Attempts to '
+            self.log_warn('Warning: node name mismatch reported. Attempts to '
                           'connect to some nodes may fail.\n')
         return self.parse_pcs_output()
 
