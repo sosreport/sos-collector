@@ -25,7 +25,8 @@ class kubernetes(Cluster):
     cmd = 'kubectl'
 
     option_list = [
-        ('label', '', 'Restrict nodes to those with matching label')
+        ('label', '', 'Filter node list to those with matching label'),
+        ('role', '', 'Filter node list to those with matching role')
     ]
 
     def get_nodes(self):
@@ -34,8 +35,15 @@ class kubernetes(Cluster):
             self.cmd += ' -l %s ' % self.get_option('label')
         res = self.exec_master_cmd(self.cmd)
         if res['status'] == 0:
-            nodes = [node.split()[0] for node in res['stdout'].splitlines()]
-            nodes.remove("NAME")
+            nodes = []
+            roles = [x for x in self.get_option('role').split(',') if x]
+            for nodeln in res['stdout'].splitlines()[1:]:
+                node = nodeln.split()
+                if not roles:
+                    nodes.append(node[0])
+                else:
+                    if node[2] in roles:
+                        nodes.append(node[0])
             return nodes
         else:
             raise Exception('Node enumeration did not return usable output')

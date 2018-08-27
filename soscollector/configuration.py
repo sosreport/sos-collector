@@ -118,14 +118,15 @@ class Configuration(dict):
     def parse_cluster_options(self):
         opts = []
         if self['cluster_options']:
-            for opt in self['cluster_options'].split(','):
-                cluster = opt.split('.')[0]
-                name = opt.split('.')[1].split('=')[0]
+            for option in self['cluster_options']:
+                cluster = option.split('.')[0]
+                name = option.split('.')[1].split('=')[0]
                 try:
-                    value = opt.split('=')[1]
+                    value = option.split('=')[1]
                 except IndexError:
                     # conversion to boolean is handled during validation
                     value = 'True'
+
                 opts.append(
                     ClusterOption(name, value, value.__class__, cluster)
                 )
