@@ -63,7 +63,7 @@ if __name__ == '__main__':
     parser.add_argument('-l', '--list-options', action="store_true",
                         help='List options available for profiles')
     parser.add_argument('--label', help='Assign a label to the archives')
-    parser.add_argument('--log-size', default='', type=int,
+    parser.add_argument('--log-size', default=0, type=int,
                         help='Limit the size of individual logs (in MiB)')
     parser.add_argument('-n', '--skip-plugins', action="append",
                         help='Skip these plugins')
