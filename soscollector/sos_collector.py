@@ -170,7 +170,7 @@ class SosCollector():
 
     def create_tmp_dir(self):
         '''Creates a temp directory to transfer sosreports to'''
-        tmpdir = tempfile.mkdtemp(prefix='sos-collector-')
+        tmpdir = tempfile.mkdtemp(prefix='sos-collector-', dir='/var/tmp')
         self.config['tmp_dir'] = tmpdir
         self.config['tmp_dir_created'] = True
 
