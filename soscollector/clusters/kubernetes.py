@@ -20,7 +20,7 @@ class kubernetes(Cluster):
 
     packages = ('kubernetes-master',)
     sos_plugins = ['kubernetes']
-    sos_options = {'kubernetes.all': 'on'}
+    sos_plugin_options = {'kubernetes.all': 'on'}
 
     cmd = 'kubectl'
 

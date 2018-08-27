@@ -24,7 +24,7 @@ class Cluster():
     option_list = []
     packages = ('',)
     sos_plugins = []
-    sos_options = {}
+    sos_plugin_options = {}
     sos_preset = ''
 
     def __init__(self, config):
@@ -199,10 +199,10 @@ class Cluster():
             for plug in self.sos_plugins:
                 if plug not in self.config['sos_cmd']:
                     self.config['enable_plugins'].append(plug)
-        if self.sos_options:
-            for opt in self.sos_options:
+        if self.sos_plugin_options:
+            for opt in self.sos_plugin_options:
                 if not any(opt in o for o in self.config['plugin_options']):
-                    option = '%s=%s' % (opt, self.sos_options[opt])
+                    option = '%s=%s' % (opt, self.sos_plugin_options[opt])
                     self.config['plugin_options'].append(option)
 
     def format_node_list(self):
