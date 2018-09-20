@@ -23,6 +23,7 @@ sos-collector \- Collect sosreports from multiple (cluster) nodes
     [\-o ONLY_PLUGINS]
     [\-p SSH_PORT]
     [\-\-password PASSWORD]
+    [\-\-preset PRESET]
     [\-s|\-\-sysroot SYSROOT]
     [\-\-ssh\-user SSH_USER]
     [\-\-sos-cmd SOS_CMD]
@@ -161,6 +162,14 @@ that will be used to connect to all nodes.
 
 If you have differing passwords for the same user across cluster nodes, you should
 deploy SSH keys.
+.TP
+\fB\-\-preset\fR PRESET
+Specify a sos preset to use, note that this requires sos-3.6 or later to be installed
+on the node. The given preset must also exist on the remote node - local presets
+are not used.
+
+If \fB\-\-preset\fR is specified and a given node either does not have that preset
+defined, or has a version of sos prior to 3.6, this option is ignored for that node.
 .TP
 \fB\-p\fR SSH_PORT, \fB\-\-ssh\-port\fR SSH_PORT
 Specify SSH port for all nodes. Use this if SSH runs on any port other than 22.
