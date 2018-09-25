@@ -58,6 +58,7 @@ class SosNode():
             self.get_hostname()
             self.load_host_facts()
             self._load_sos_info()
+            self.sftp = self.client.open_sftp()
 
     def _fmt_msg(self, msg):
         return '{:<{}} : {}'.format(self._hostname, self.config['hostlen'] + 1,
@@ -66,9 +67,8 @@ class SosNode():
     def file_exists(self, fname):
         '''Checks for the presence of fname on the remote node'''
         if not self.local:
-            sftp = self.client.open_sftp()
             try:
-                sftp.stat(fname)
+                self.sftp.stat(fname)
                 return True
             except Exception:
                 return False
@@ -586,9 +586,7 @@ class SosNode():
             try:
                 dest = self.config['tmp_dir'] + '/' + self.archive
                 if not self.local:
-                    sftp = self.client.open_sftp()
-                    sftp.get(self.sos_path, dest)
-                    sftp.close()
+                    self.sftp.get(self.sos_path, dest)
                 else:
                     shutil.move(self.sos_path, dest)
                 self.retrieved = True
@@ -615,9 +613,17 @@ class SosNode():
         collected it and it would be wasted space otherwise'''
         if self.sos_path is None:
             return
+        if 'sosreport' not in self.sos_path:
+            self.log_debug("Node sosreport path %s looks incorrect. Not "
+                           "attempting to remove path" % self.sos_path)
+            return
         try:
-            cmd = "rm -f %s" % self.sos_path
-            res = self.run_command(cmd)
+            if self.local:
+                cmd = "rm -f %s" % self.sos_path
+                res = self.run_command(cmd)
+            else:
+                self.log_debug("Removing remote path %s" % self.sos_path)
+                self.sftp.remove(self.sos_path)
         except Exception as e:
             self.log_error('Failed to remove sosreport on host: %s' % e)
 
@@ -627,6 +633,7 @@ class SosNode():
         cleanup = self.config['cluster'].get_cleanup_cmd(self.host_facts)
         if cleanup:
             sin, sout, serr = self.client.exec_command(cleanup, timeout=15)
+        self.sftp.close()
 
     def collect_extra_cmd(self, filename):
         '''Collect the file created by a cluster outside of sos'''
@@ -639,9 +646,7 @@ class SosNode():
                     return False
             dest = self.config['tmp_dir'] + '/' + filename.split('/')[-1]
             if not self.local:
-                sftp = self.client.open_sftp()
-                sftp.get(filename, dest)
-                sftp.close()
+                self.sftp.get(filename, dest)
             else:
                 shutil.move(filename, dest)
             return True
