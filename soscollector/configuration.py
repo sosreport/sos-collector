@@ -122,7 +122,9 @@ class Configuration(dict):
                 cluster = option.split('.')[0]
                 name = option.split('.')[1].split('=')[0]
                 try:
-                    value = option.split('=')[1]
+                    # there are no instances currently where any cluster option
+                    # should contain a legitimate space.
+                    value = option.split('=')[1].split()[0]
                 except IndexError:
                     # conversion to boolean is handled during validation
                     value = 'True'

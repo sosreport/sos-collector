@@ -156,6 +156,11 @@ class SosCollector():
         self.logger.info(msg)
         self.console.info(msg)
 
+    def log_warn(self, msg):
+        '''Log warn messages to both console and log file'''
+        self.logger.warn(msg)
+        self.console.warn('WARNING: %s' % msg)
+
     def log_error(self, msg):
         '''Log error messages to both console and log file'''
         self.logger.error(msg)
@@ -278,6 +283,7 @@ this utility or remote systems that it connects to.
         self.console.info("\nsos-collector (version %s)\n" % __version__)
         intro_msg = self._fmt_msg(disclaimer % self.config['tmp_dir'])
         self.console.info(intro_msg)
+        self.configure_sos_cmd()
         prompt = "\nPress ENTER to continue, or CTRL-C to quit\n"
         if not self.config['batch']:
             input(prompt)
@@ -332,9 +338,10 @@ this utility or remote systems that it connects to.
                    '\nAborting...')
             self._exit(msg, 1)
         self.config['cluster'].setup()
+        if self.config['cluster_type']:
+            self.config['cluster'].modify_sos_cmd()
         self.get_nodes()
         self.intro()
-        self.configure_sos_cmd()
 
     def intro(self):
         '''Prints initial messages and collects user and case if not
@@ -363,10 +370,17 @@ this utility or remote systems that it connects to.
     def configure_sos_cmd(self):
         '''Configures the sosreport command that is run on the nodes'''
         if self.config['sos_opt_line']:
-            self.config['sos_cmd'] += self.config['sos_opt_line']
-            self.log_debug("User specified manual sosreport command line. "
-                           "sos command set to %s" % self.config['sos_cmd'])
-            return True
+            filt = ['&', '|', '>', '<']
+            if any(f in self.config['sos_opt_line'] for f in filt):
+                self.log_warn('Possible shell script found in provided sos '
+                              'command. Ignoring --sos-cmd option entirely.')
+                self.config['sos_opt_line'] = None
+            else:
+                self.config['sos_cmd'] = '%s %s' % (
+                    self.config['sos_cmd'], self.config['sos_opt_line'])
+                self.log_debug("User specified manual sosreport command. "
+                               "Command set to %s" % self.config['sos_cmd'])
+                return True
         if self.config['case_id']:
             self.config['sos_cmd'] += ' --case-id=%s' % self.config['case_id']
         if self.config['alloptions']:
@@ -382,8 +396,6 @@ this utility or remote systems that it connects to.
             self.config['sos_cmd'] += ' -c %s' % self.config['chroot']
         if self.config['compression']:
             self.config['sos_cmd'] += ' -z %s' % self.config['compression']
-        if self.config['cluster_type']:
-            self.config['cluster'].modify_sos_cmd()
         self.log_debug('Initial sos cmd set to %s' % self.config['sos_cmd'])
 
     def connect_to_master(self):
