@@ -41,6 +41,7 @@ class SosCollector():
     '''Main sos-collector class'''
 
     def __init__(self, config):
+        os.umask(0077)
         self.config = config
         self.threads = []
         self.workers = []
