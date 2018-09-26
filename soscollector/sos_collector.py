@@ -572,8 +572,7 @@ this utility or remote systems that it connects to.
             self.log_error('Exiting on user cancel\n')
             os._exit(130)
 
-        if (hasattr(self.config['cluster'], 'run_extra_cmd')
-                and self.master.address is not 'localhost'):
+        if hasattr(self.config['cluster'], 'run_extra_cmd'):
             self.console.info('Collecting additional data from master node...')
             f = self.config['cluster'].run_extra_cmd()
             if f:
