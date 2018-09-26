@@ -331,14 +331,15 @@ this utility or remote systems that it connects to.
             self.master = SosNode('localhost', self.config)
         if self.config['cluster_type']:
             self.config['cluster'] = self.clusters[self.config['cluster_type']]
+            self.config['cluster'].master = self.master
         else:
             self.determine_cluster()
         if self.config['cluster'] is None and not self.config['nodes']:
             msg = ('Cluster type could not be determined and no nodes provided'
                    '\nAborting...')
             self._exit(msg, 1)
-        self.config['cluster'].setup()
-        if self.config['cluster_type']:
+        if self.config['cluster']:
+            self.config['cluster'].setup()
             self.config['cluster'].modify_sos_cmd()
         self.get_nodes()
         self.intro()
@@ -430,9 +431,10 @@ this utility or remote systems that it connects to.
 
     def get_nodes_from_cluster(self):
         '''Collects the list of nodes from the determined cluster cluster'''
-        nodes = self.config['cluster']._get_nodes()
-        self.log_debug('Node list: %s' % nodes)
-        return nodes
+        if self.config['cluster_type'] and not self.config['nodes']:
+            nodes = self.config['cluster']._get_nodes()
+            self.log_debug('Node list: %s' % nodes)
+            return nodes
 
     def reduce_node_list(self):
         '''Reduce duplicate entries of the localhost and/or master node
@@ -554,11 +556,13 @@ this utility or remote systems that it connects to.
             pool.shutdown(wait=True)
 
             self.report_num = len(self.client_list)
+            if self.config['no_local'] and self.master.address == 'localhost':
+                self.report_num -= 1
 
             self.console.info("\nBeginning collection of sosreports from %s "
                               "nodes, collecting a maximum of %s "
                               "concurrently\n"
-                              % (len(self.client_list), self.config['threads'])
+                              % (self.report_num, self.config['threads'])
                               )
 
             pool = ThreadPoolExecutor(self.config['threads'])
@@ -568,7 +572,8 @@ this utility or remote systems that it connects to.
             self.log_error('Exiting on user cancel\n')
             os._exit(130)
 
-        if hasattr(self.config['cluster'], 'run_extra_cmd'):
+        if (hasattr(self.config['cluster'], 'run_extra_cmd')
+                and self.master.address is not 'localhost'):
             self.console.info('Collecting additional data from master node...')
             f = self.config['cluster'].run_extra_cmd()
             if f:

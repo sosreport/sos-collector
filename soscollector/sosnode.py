@@ -51,6 +51,7 @@ class SosNode():
         self.console = logging.getLogger('sos_collector_console')
         if self.address not in filt or force:
             self.connected = self.open_ssh_session()
+            self.sftp = self.client.open_sftp()
         else:
             self.connected = True
             self.local = True
@@ -58,7 +59,6 @@ class SosNode():
             self.get_hostname()
             self.load_host_facts()
             self._load_sos_info()
-            self.sftp = self.client.open_sftp()
 
     def _fmt_msg(self, msg):
         return '{:<{}} : {}'.format(self._hostname, self.config['hostlen'] + 1,
