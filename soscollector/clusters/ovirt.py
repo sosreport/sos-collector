@@ -59,7 +59,7 @@ class ovirt(Cluster):
                             % res['status'])
 
     def run_extra_cmd(self):
-        if not self.get_option('no-database'):
+        if not self.get_option('no-database') and self.conf:
             return self.collect_database()
         return False
 
@@ -69,14 +69,15 @@ class ovirt(Cluster):
         res = self.exec_master_cmd('cat %s' % engconf, need_root=True)
         if res['status'] == 0:
             config = res['stdout'].splitlines()
-        for line in config:
-            try:
-                k = str(line.split('=')[0])
-                v = str(line.split('=')[1].replace('"', ''))
-                conf[k] = v
-            except IndexError:
-                pass
-        return conf
+            for line in config:
+                try:
+                    k = str(line.split('=')[0])
+                    v = str(line.split('=')[1].replace('"', ''))
+                    conf[k] = v
+                except IndexError:
+                    pass
+            return conf
+        return False
 
     def collect_database(self):
         sos_opt = (
