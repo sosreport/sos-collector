@@ -55,7 +55,7 @@ class Configuration(dict):
         self['hostname'] = socket.gethostname()
         ips = [i[4][0] for i in socket.getaddrinfo(socket.gethostname(), None)]
         self['ip_addrs'] = list(set(ips))
-        self['cluster_options'] = ''
+        self['cluster_options'] = []
         self['image'] = None
         self['skip_plugins'] = []
         self['enable_plugins'] = []
@@ -117,6 +117,8 @@ class Configuration(dict):
 
     def parse_cluster_options(self):
         opts = []
+        if not isinstance(self['cluster_options'], list):
+            self['cluster_options'] = [self['cluster_options']]
         if self['cluster_options']:
             for option in self['cluster_options']:
                 cluster = option.split('.')[0]
