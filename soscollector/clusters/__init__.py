@@ -230,3 +230,24 @@ class Cluster():
             if node.startswith(('-', '_', '(', ')', '[', ']', '/', '\\')):
                 node_list.remove(node)
         return node_list
+
+    def _run_extra_cmd(self):
+        '''Ensures that any files returned by a cluster's run_extra_cmd()
+        method are properly typed as a list for iterative collection. If any
+        of the files are an additional sosreport (e.g. the ovirt db dump) then
+        the md5 sum file is automatically added to the list
+        '''
+        files = []
+        try:
+            res = self.run_extra_cmd()
+            if res:
+                if not isinstance(res, list):
+                    res = [res]
+                for extra_file in res:
+                    extra_file = extra_file.strip()
+                    files.append(extra_file)
+                    if 'sosreport' in extra_file:
+                        files.append(extra_file + '.md5')
+        except AttributeError:
+            pass
+        return files

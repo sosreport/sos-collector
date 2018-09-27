@@ -38,6 +38,7 @@ class SosNode():
         self.config = config
         self.sos_path = None
         self.retrieved = False
+        self.hash_retrieved = False
         self.host_facts = {'address': address}
         self.sos_info = {
             'version': None,
@@ -70,7 +71,7 @@ class SosNode():
             try:
                 self.sftp.stat(fname)
                 return True
-            except Exception:
+            except Exception as err:
                 return False
         else:
             try:
@@ -572,6 +573,49 @@ class SosNode():
             self.log_error('Error running sosreport: %s' % e)
             raise
 
+    def retrieve_file(self, path):
+        '''Copies the specified file from the host to our temp dir'''
+        destdir = self.config['tmp_dir'] + '/'
+        dest = destdir + path.split('/')[-1]
+        try:
+            if not self.local:
+                if self.file_exists(path):
+                    self.log_debug("Copying remote %s to local %s" %
+                                   (path, destdir))
+                    self.sftp.get(path, dest)
+                else:
+                    self.log_debug("Attempting to copy remote file %s, but it "
+                                   "does not exist on filesystem" % path)
+                    return False
+            else:
+                self.log_debug("Moving %s to %s" % (path, destdir))
+                shutil.move(path, dest)
+            return True
+        except Exception as err:
+            self.log_debug("Failed to retrieve %s: %s" % (path, err))
+            return False
+
+    def remove_file(self, path):
+        '''Removes the spciefied file from the host. This should only be used
+        after we have retrieved the file already
+        '''
+        try:
+            if self.file_exists(path):
+                self.log_debug("Removing file %s" % path)
+                if self.local:
+                    cmd = "rm -f %s" % path
+                    res = self.run_command(cmd)
+                else:
+                    self.sftp.remove(path)
+                return True
+            else:
+                self.log_debug("Attempting to remove remote file %s, but it "
+                               "does not exist on filesystem" % path)
+                return False
+        except Exception as e:
+            self.log_error('Failed to remove %s: %s' % (path, e))
+            return False
+
     def retrieve_sosreport(self):
         '''Collect the sosreport archive from the node'''
         if self.sos_path:
@@ -583,20 +627,14 @@ class SosNode():
                     return False
             self.logger.info('Retrieving sosreport from %s' % self.address)
             self.log_info('Retrieving sosreport...')
-            try:
-                dest = self.config['tmp_dir'] + '/' + self.archive
-                if not self.local:
-                    self.sftp.get(self.sos_path, dest)
-                else:
-                    shutil.move(self.sos_path, dest)
-                self.retrieved = True
+            ret = self.retrieve_file(self.sos_path)
+            if ret:
                 self.log_info('Successfully collected sosreport')
-                return True
-            except Exception as err:
-                msg = 'Failed to retrieve sosreport from %s, error: %s'
-                self.logger.error(msg % (self.address, err))
-                self.log_error('Failed to retrieve sosreport. %s' % err)
+            else:
+                self.log_error('Failed to retrieve sosreport')
                 return False
+            self.hash_retrieved = self.retrieve_file(self.sos_path + '.md5')
+            return True
         else:
             # sos sometimes fails but still returns a 0 exit code
             if self.stderr.read():
@@ -617,43 +655,39 @@ class SosNode():
             self.log_debug("Node sosreport path %s looks incorrect. Not "
                            "attempting to remove path" % self.sos_path)
             return
-        try:
-            if self.local:
-                cmd = "rm -f %s" % self.sos_path
-                res = self.run_command(cmd)
-            else:
-                self.log_debug("Removing remote path %s" % self.sos_path)
-                self.sftp.remove(self.sos_path)
-        except Exception as e:
-            self.log_error('Failed to remove sosreport on host: %s' % e)
+        removed = self.remove_file(self.sos_path)
+        if not removed:
+            self.log_error('Failed to remove sosreport')
 
     def cleanup(self):
         '''Remove the sos archive from the node once we have it locally'''
         self.remove_sos_archive()
+        if self.hash_retrieved:
+            self.remove_file(self.sos_path + '.md5')
         cleanup = self.config['cluster'].get_cleanup_cmd(self.host_facts)
         if cleanup:
-            sin, sout, serr = self.client.exec_command(cleanup, timeout=15)
-        self.sftp.close()
+            self.run_command(cleanup)
 
-    def collect_extra_cmd(self, filename):
+    def collect_extra_cmd(self, filenames):
         '''Collect the file created by a cluster outside of sos'''
-        try:
-            if self.config['need_sudo'] or self.config['become_root']:
-                try:
-                    self.make_archive_readable(filename)
-                except Exception:
-                    self.console.error('Unable to make extra data readable')
-                    return False
-            dest = self.config['tmp_dir'] + '/' + filename.split('/')[-1]
-            if not self.local:
-                self.sftp.get(filename, dest)
-            else:
-                shutil.move(filename, dest)
-            return True
-        except Exception as e:
-            msg = 'Error collecting additional data from master: %s' % e
-            self.log_error(msg)
-            return False
+        for filename in filenames:
+            try:
+                if self.config['need_sudo'] or self.config['become_root']:
+                    try:
+                        self.make_archive_readable(filename)
+                    except Exception as err:
+                        self.log_error("Unable to retrieve file %s" % filename)
+                        self.log_debug("Failed to make file %s readable: %s"
+                                       % (filename, err))
+                        continue
+                ret = self.retrieve_file(filename)
+                if ret:
+                    self.remove_file(filename)
+                else:
+                    self.log_error("Unable to retrieve file %s" % filename)
+            except Exception as e:
+                msg = 'Error collecting additional data from master: %s' % e
+                self.log_error(msg)
 
     def make_archive_readable(self, filepath):
         '''Used to make the given archive world-readable, which is slightly

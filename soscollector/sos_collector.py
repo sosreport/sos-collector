@@ -574,9 +574,9 @@ this utility or remote systems that it connects to.
 
         if hasattr(self.config['cluster'], 'run_extra_cmd'):
             self.console.info('Collecting additional data from master node...')
-            f = self.config['cluster'].run_extra_cmd()
-            if f:
-                self.master.collect_extra_cmd(f)
+            files = self.config['cluster']._run_extra_cmd()
+            if files:
+                self.master.collect_extra_cmd(files)
         msg = '\nSuccessfully captured %s of %s sosreports'
         self.log_info(msg % (self.retrieved, self.report_num))
         if self.retrieved > 0:
