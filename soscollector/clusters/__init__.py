@@ -168,8 +168,8 @@ class Cluster():
         try:
             return self.format_node_list()
         except Exception as e:
-            self.logger.error('Failed to get node list: %s' % e)
-            raise
+            self.log_debug('Failed to get node list: %s' % e)
+            return []
 
     def get_node_label(self, node):
         '''Used by SosNode() to retrieve the appropriate label from the cluster
