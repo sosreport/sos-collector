@@ -444,13 +444,12 @@ class SosNode():
         if prefix:
             self.sos_cmd = prefix + self.sos_cmd
 
-        if self.config['sos_opt_line']:
-            self.sos_cmd += self.config['sos_opt_line']
-            return True
-
         label = self.determine_sos_label()
         if label:
             self.sos_cmd = ' %s %s' % (self.sos_cmd, label)
+
+        if self.config['sos_opt_line']:
+            return True
 
         if self.config['only_plugins']:
             plugs = [o for o in self.config['only_plugins']

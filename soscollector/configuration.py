@@ -13,6 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+import pipes
 import re
 import six
 import socket
@@ -114,6 +115,8 @@ class Configuration(dict):
         for k in self.args:
             if self.args[k]:
                 self[k] = self.args[k]
+        if self['sos_opt_line']:
+            self['sos_opt_line'] = pipes.quote(self['sos_opt_line'])
 
     def parse_cluster_options(self):
         opts = []
@@ -126,7 +129,7 @@ class Configuration(dict):
                 try:
                     # there are no instances currently where any cluster option
                     # should contain a legitimate space.
-                    value = option.split('=')[1].split()[0]
+                    value = pipes.quote(option.split('=')[1].split()[0])
                 except IndexError:
                     # conversion to boolean is handled during validation
                     value = 'True'
