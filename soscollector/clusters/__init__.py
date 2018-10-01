@@ -103,46 +103,6 @@ class Cluster():
         '''
         pass
 
-    def get_sos_path_strip(self, facts):
-        '''This calls set_sos_path_strip that is used by clusters to determine
-        if we need to remove a particular string from a returned sos path for
-        any reason
-        '''
-        return self.set_sos_path_strip(facts)
-
-    def set_sos_path_strip(self, facts):
-        '''This may be overriden by a cluster and used to set
-        a string to be stripped from the return sos path if needed.
-
-        For example, on Atomic Host, the sosreport gets written under
-        /host/var/tmp in the container, but is available to scp under the
-        standard /var/tmp after the container exits.
-
-        If a cluster overrides this, it will need to be known if it needs to be
-        sensitive to cluster nodes being Atomic Hosts.
-        '''
-        if facts['atomic']:
-            return '/host'
-
-    def get_cleanup_cmd(self, facts):
-        '''This calls set_cleanup_cmd that is used by clusers to determine if
-        sos-collector needs to do additional cleanup on a node
-        '''
-        return self.set_cleanup_cmd(facts)
-
-    def set_cleanup_cmd(self, facts):
-        '''This should be overridden by a cluster and used to set an additional
-        command to run during cleanup.
-
-        The cluster should return a string containing the full cleanup
-        command to run
-
-        If a cluster overrides this, it will need to be known if the the
-        cluster needs to be sensitive to cluster nodes being Atomic Hosts.
-        '''
-        if facts['atomic']:
-            return 'docker rm sos-collector-tmp'
-
     def check_enabled(self):
         '''This may be overridden by clusters
 
@@ -177,7 +137,7 @@ class Cluster():
         '''
         return self.set_node_label(node)
 
-    def set_node_label(self, facts):
+    def set_node_label(self, node):
         '''This may be overridden by clusters.
 
         If there is a distinction between masters and nodes, or types of nodes,

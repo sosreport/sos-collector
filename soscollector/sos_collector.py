@@ -56,7 +56,11 @@ class SosCollector():
                     self.create_tmp_dir()
                 self._setup_logging()
                 self.log_debug('Executing %s' % ' '.join(s for s in sys.argv))
-                self._load_clusters()
+                self.clusters = self.config['cluster_types']
+                self.log_debug("Found cluster profiles: %s"
+                               % self.clusters.keys())
+                self.log_debug("Found supported host types: %s"
+                               % self.config['host_types'].keys())
                 self._parse_options()
                 self.prep()
             except KeyboardInterrupt:
@@ -208,27 +212,6 @@ class SosCollector():
         '''Removes the temp directory and all collected sosreports'''
         shutil.rmtree(self.config['tmp_dir'])
 
-    def _load_clusters(self):
-        '''Load an instance of each cluster so that sos-collector can later
-        determine what type of cluster is in use
-        '''
-        if 'soscollector' not in os.listdir(os.getcwd()):
-            p = get_python_lib()
-            path = p + '/soscollector/clusters/'
-        else:
-            path = 'soscollector/clusters'
-        self.clusters = {}
-        sys.path.insert(0, path)
-        for f in sorted(os.listdir(path)):
-            fname, ext = os.path.splitext(f)
-            if ext == '.py' and fname not in ['__init__', 'cluster']:
-                mods = inspect.getmembers(__import__(fname), inspect.isclass)
-                for cluster in mods[1:]:
-                    self.clusters[cluster[0]] = cluster[1](self.config)
-        self.log_debug('Found cluster profiles: %s'
-                       % list(self.clusters.keys()))
-        sys.path.pop(0)
-
     def _get_archive_name(self):
         '''Generates a name for the tarball archive'''
         nstr = 'sos-collector'
@@ -328,7 +311,15 @@ this utility or remote systems that it connects to.
             self.connect_to_master()
             self.config['no_local'] = True
         else:
-            self.master = SosNode('localhost', self.config)
+            try:
+                self.master = SosNode('localhost', self.config)
+            except Exception as err:
+                self.log_debug("Unable to determine local installation: %s" %
+                               err)
+                self._exit('Unable to determine local installation. Use the '
+                           '--no-local option if localhost should not be '
+                           'included.\nAborting...\n', 1)
+
         if self.config['cluster_type']:
             self.config['cluster'] = self.clusters[self.config['cluster_type']]
             self.config['cluster'].master = self.master

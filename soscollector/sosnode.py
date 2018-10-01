@@ -16,13 +16,13 @@
 import fnmatch
 import inspect
 import logging
+import os
 import paramiko
 import re
 import shutil
 import socket
 import subprocess
 import six
-import sys
 import time
 
 from distutils.version import LooseVersion
@@ -39,7 +39,6 @@ class SosNode():
         self.sos_path = None
         self.retrieved = False
         self.hash_retrieved = False
-        self.host_facts = {'address': address}
         self.sos_info = {
             'version': None,
             'enabled': [],
@@ -57,8 +56,15 @@ class SosNode():
             self.connected = True
             self.local = True
         if self.connected and load_facts:
+            self.host = self.determine_host()
+            self._set_sos_prefix(self.host.set_sos_prefix())
+            if not self.host:
+                self.connected = False
+                self.close_ssh_session()
+                return None
+            self.log_debug("Host facts found to be %s" %
+                           self.host.report_facts())
             self.get_hostname()
-            self.load_host_facts()
             self._load_sos_info()
 
     def _fmt_msg(self, msg):
@@ -150,8 +156,7 @@ class SosNode():
     def _load_sos_info(self):
         '''Queries the node for information about the installed version of sos
         '''
-        prefix = self.set_sos_prefix()
-        cmd = prefix + self.host_facts['package_manager']['query'] + 'sos'
+        cmd = self.host.prefix + self.host.pkg_query('sos')
         res = self.run_command(cmd)
         if res['status'] == 0:
             ver = res['stdout'].splitlines()[-1].split('-')[1]
@@ -161,7 +166,7 @@ class SosNode():
             self.log_error('sos is not installed on this node')
             self.connected = False
             return False
-        cmd = prefix + 'sosreport -l'
+        cmd = self.host.prefix + 'sosreport -l'
         sosinfo = self.run_command(cmd)
         if sosinfo['status'] == 0:
             self._load_sos_plugins(sosinfo['stdout'])
@@ -169,8 +174,7 @@ class SosNode():
             self._load_sos_presets()
 
     def _load_sos_presets(self):
-        prefix = self.set_sos_prefix()
-        cmd = prefix + 'sosreport --list-presets'
+        cmd = self.host.prefix + 'sosreport --list-presets'
         res = self.run_command(cmd)
         if res['status'] == 0:
             for line in res['stdout'].splitlines():
@@ -208,6 +212,47 @@ class SosNode():
                     res.extend(p.strip() for p in r if p.strip())
         return res
 
+    def _set_sos_prefix(self, prefix):
+        '''Applies any configuration settings to the sos prefix defined by a
+        host type
+        '''
+        if self.host.containerized:
+            prefix = prefix % {
+                'image': self.config['image'] or self.host.container_image
+            }
+        self.host.prefix = prefix
+
+    def read_file(self, to_read):
+        '''Reads the specified file and returns the contents'''
+        try:
+            self.log_debug("Reading file %s" % to_read)
+            if not self.local:
+                remote = self.sftp.open(to_read)
+                return remote.read()
+            else:
+                with open(to_read, 'r') as rfile:
+                    return rfile.read()
+        except Exception as err:
+            if err.errno == 2:
+                self.log_debug("File %s does not exist on node" % to_read)
+            else:
+                self.log_error("Error reading %s: %s" % (to_read, err))
+            return ''
+
+    def determine_host(self):
+        '''Attempts to identify the host installation against supported
+        distributions
+        '''
+        for host_type in self.config['host_types']:
+            host = self.config['host_types'][host_type](self.address)
+            rel_string = self.read_file(host.release_file)
+            if host._check_enabled(rel_string):
+                self.log_debug("Host installation found to be %s" %
+                               host.distribution)
+                return host
+        self.log_error('Unable to determine host installation. Ignoring node')
+        raise Exception('Host did not match any supported distributions')
+
     def check_sos_version(self, ver):
         '''Checks to see if the sos installation on the node is AT LEAST the
         given ver. This means that if the installed version is greater than
@@ -217,7 +262,7 @@ class SosNode():
 
     def is_installed(self, pkg):
         '''Checks if a given package is installed on the node'''
-        cmd = self.host_facts['package_manager']['query'] + pkg
+        cmd = self.host.pkg_query(pkg)
         res = self.run_command(cmd)
         if res['status'] == 0:
             return True
@@ -338,64 +383,6 @@ class SosNode():
             self.log_error('Error closing SSH session: %s' % e)
             return False
 
-    def load_host_facts(self):
-        '''Obtain information about the node which can be referneced by
-        clusters to change the sosreport command'''
-        self.get_release()
-        self.set_package_manager()
-        self.log_debug('Facts found to be %s' % self.host_facts)
-
-    def set_sos_prefix(self):
-        '''Sets a prefix to any sos related commands run on the node.
-        Currently, only checks for if the node is an Atomic Host, in which case
-        use the specified container image to run all sos commands in
-        '''
-        prefix = ''
-        if self.host_facts['atomic']:
-            cmd = 'atomic run --name=sos-collector-tmp --replace '
-            img = self.config['image']
-            prefix = '%s %s ' % (cmd, img)
-        return prefix
-
-    def get_release(self):
-        '''Determine the distribution that we're running on.
-        For our intents, any Red Hat family distribution or derivitive is going
-        to be listed as 'Red Hat'
-        '''
-        release = 'Unknown'
-        self.host_facts['release'] = release
-        self.host_facts['atomic'] = False
-        try:
-            if self.file_exists('/etc/redhat-release'):
-                relfile = '/etc/redhat-release'
-            else:
-                relfile = '/etc/os-release'
-            res = self.run_command('cat ' + relfile)
-            if len(res['stdout'].splitlines()) > 2:
-                for line in res['stdout'].splitlines():
-                    if line.startswith('NAME'):
-                        release = line.split('=')[1].lower().strip('"')
-            else:
-                release = res['stdout'].lower()
-            self.host_facts['release'] = release
-            rh = ['fedora', 'centos', 'red hat']
-            if any(rel in release for rel in rh):
-                self.host_facts['distro'] = 'Red Hat'
-                self.config['image'] = ('registry.access.redhat.com/rhel7/'
-                                        'support-tools ')
-            self.host_facts['atomic'] = 'atomic' in release
-        except Exception as e:
-            self.log_error(e)
-
-    def set_package_manager(self):
-        '''Based on the distribution of the node, set the package manager to
-        use for checking system installations'''
-        self.host_facts['package_manager'] = None
-        if self.host_facts['distro'] == 'Red Hat':
-            self.host_facts['package_manager'] = {'name': 'rpm',
-                                                  'query': 'rpm -q '
-                                                  }
-
     def _preset_exists(self, preset):
         '''Verifies if the given preset exists on the node'''
         return preset in self.sos_info['presets']
@@ -439,10 +426,7 @@ class SosNode():
         '''Use host facts and compare to the cluster type to modify the sos
         command if needed'''
         self.sos_cmd = self.config['sos_cmd']
-
-        prefix = self.set_sos_prefix()
-        if prefix:
-            self.sos_cmd = prefix + self.sos_cmd
+        self.sos_cmd = self.host.prefix + self.sos_cmd
 
         label = self.determine_sos_label()
         if label:
@@ -525,7 +509,7 @@ class SosNode():
     def finalize_sos_path(self, path):
         '''Use host facts to determine if we need to change the sos path
         we are retrieving from'''
-        pstrip = self.config['cluster'].get_sos_path_strip(self.host_facts)
+        pstrip = self.host.sos_path_strip
         if pstrip:
             path = path.replace(pstrip, '')
         path = path.split()[0]
@@ -663,7 +647,7 @@ class SosNode():
         self.remove_sos_archive()
         if self.hash_retrieved:
             self.remove_file(self.sos_path + '.md5')
-        cleanup = self.config['cluster'].get_cleanup_cmd(self.host_facts)
+        cleanup = self.host.set_cleanup_cmd()
         if cleanup:
             self.run_command(cleanup)
 

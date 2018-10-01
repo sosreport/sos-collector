@@ -108,7 +108,7 @@ class rhv(ovirt):
     sos_preset = 'rhv'
 
     def set_node_label(self, node):
-        if node.host_facts['address'] == self.master.address:
+        if node.address == self.master.address:
             return 'manager'
         if node.is_installed('ovirt-node-ng-nodectl'):
             return 'rhvh'
