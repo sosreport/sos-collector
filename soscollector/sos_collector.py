@@ -43,8 +43,6 @@ class SosCollector():
     def __init__(self, config):
         os.umask(0o77)
         self.config = config
-        self.threads = []
-        self.workers = []
         self.client_list = []
         self.node_list = []
         self.master = False

@@ -585,9 +585,10 @@ class SosNode():
         try:
             if self.file_exists(path):
                 self.log_debug("Removing file %s" % path)
-                if self.local:
+                if (self.local or self.config['become_root'] or
+                        self.config['need_sudo']):
                     cmd = "rm -f %s" % path
-                    res = self.run_command(cmd)
+                    res = self.run_command(cmd, need_root=True)
                 else:
                     self.sftp.remove(path)
                 return True
@@ -596,7 +597,7 @@ class SosNode():
                                "does not exist on filesystem" % path)
                 return False
         except Exception as e:
-            self.log_error('Failed to remove %s: %s' % (path, e))
+            self.log_debug('Failed to remove %s: %s' % (path, e))
             return False
 
     def retrieve_sosreport(self):
