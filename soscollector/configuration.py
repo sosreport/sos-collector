@@ -33,8 +33,8 @@ class Configuration(dict):
         self.parse_options()
         self.check_user_privs()
         self.parse_node_strings()
-        self._load_supported_hosts()
-        self._load_clusters()
+        self['host_types'] = self._load_supported_hosts()
+        self['cluster_types'] = self._load_clusters()
 
     def set_defaults(self):
         self['sos_mod'] = {}
@@ -161,45 +161,70 @@ class Configuration(dict):
         if not self['ssh_user'] == 'root':
             self['need_sudo'] = True
 
+    def _import_modules(self, modname):
+        '''Import and return all found classes in a module'''
+        mod_short_name = modname.split('.')[2]
+        module = __import__(modname, globals(), locals(), [mod_short_name])
+        modules = inspect.getmembers(module, inspect.isclass)
+        return modules
+
+    def _find_modules_in_path(self, path, modulename):
+        '''Given a path and a module name, find everything that can be imported
+        and then import it
+
+            path - the filesystem path of the package
+            modulename - the name of the module in the package
+
+        E.G. a path of 'clusters', and a modulename of 'ovirt' equates to
+        importing soscollector.clusters.ovirt
+        '''
+        modules = []
+        if os.path.exists(path):
+            for pyfile in sorted(os.listdir(path)):
+                if not pyfile.endswith('.py'):
+                    continue
+                if '__' in pyfile:
+                    continue
+                fname, ext = os.path.splitext(pyfile)
+                modname = 'soscollector.%s.%s' % (modulename, fname)
+                modules.extend(self._import_modules(modname))
+        return modules
+
+    def _load_modules(self, package, submod):
+        '''Helper to import cluster and host types'''
+        modules = []
+        for path in package.__path__:
+            if os.path.isdir(path):
+                modules.extend(self._find_modules_in_path(path, submod))
+        return modules
+
     def _load_clusters(self):
         '''Load an instance of each cluster so that sos-collector can later
         determine what type of cluster is in use
         '''
-        if 'soscollector' not in os.listdir(os.getcwd()):
-            p = get_python_lib()
-            path = p + '/soscollector/clusters/'
-        else:
-            path = 'soscollector/clusters'
-        self['cluster_types'] = {}
-        sys.path.insert(0, path)
-        for f in sorted(os.listdir(path)):
-            fname, ext = os.path.splitext(f)
-            if ext == '.py' and fname not in ['__init__', 'cluster']:
-                mods = inspect.getmembers(__import__(fname), inspect.isclass)
-                for cluster in mods[1:]:
-                    self['cluster_types'][cluster[0]] = cluster[1](self)
-        sys.path.pop(0)
+        import soscollector.clusters
+        package = soscollector.clusters
+        supported_clusters = {}
+        clusters = self._load_modules(package, 'clusters')
+        for cluster in clusters:
+            if cluster[0] == 'Cluster':
+                continue
+            supported_clusters[cluster[0]] = cluster[1](self)
+        return supported_clusters
 
     def _load_supported_hosts(self):
         '''Load all the supported/defined host types for sos-collector.
         These will then be used to match against each node we run on
         '''
-        if 'soscollector' not in os.listdir(os.getcwd()):
-            p = get_python_lib()
-            path = p + '/soscollector/hosts/'
-        else:
-            path = 'soscollector/hosts'
-        self['host_types'] = {}
-        sys.path.insert(0, path)
-        for f in sorted(os.listdir(path)):
-            fname, ext = os.path.splitext(f)
-            if ext == '.py' and fname not in ['__init__', 'hosts']:
-                mods = inspect.getmembers(__import__(fname), inspect.isclass)
-                for host in mods:
-                    if host[0] == 'SosHost':
-                        continue
-                    self['host_types'][host[0]] = host[1]
-        sys.path.pop(0)
+        import soscollector.hosts
+        package = soscollector.hosts
+        supported_hosts = {}
+        hosts = self._load_modules(package, 'hosts')
+        for host in hosts:
+            if host[0] == 'SosHost':
+                continue
+            supported_hosts[host[0]] = host[1]
+        return supported_hosts
 
 
 class ClusterOption():
