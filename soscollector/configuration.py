@@ -109,6 +109,9 @@ class Configuration(dict):
                     pos = idx
                     reg = node[start:idx]
                     re.compile(re.escape(reg))
+                    # make sure we aren't splitting a regex value
+                    if '[' in reg and ']' not in reg:
+                        continue
                     nodes.append(reg.lstrip(','))
                     start = idx
                 except re.error:

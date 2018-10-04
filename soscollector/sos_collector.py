@@ -483,7 +483,7 @@ this utility or remote systems that it connects to.
         # force add any non-regex node strings from nodes option
         if self.config['nodes']:
             for node in self.config['nodes']:
-                if any(i in node for i in ('*', '\\', '?', '(', ')', '/')):
+                if any(i in node for i in '*\\?()/[]'):
                     continue
                 if node not in self.node_list:
                     self.log_debug("Force adding %s to node list" % node)
