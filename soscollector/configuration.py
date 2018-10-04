@@ -108,7 +108,7 @@ class Configuration(dict):
                 try:
                     pos = idx
                     reg = node[start:idx]
-                    re.compile(reg)
+                    re.compile(re.escape(reg))
                     nodes.append(reg.lstrip(','))
                     start = idx
                 except re.error:

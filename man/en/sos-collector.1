@@ -124,9 +124,12 @@ This is useful if a particular plugin is prone to hanging for one reason or anot
 This option supports providing a comma-delimited list of plugins.
 .TP
 \fB\-\-nodes\fR NODES
-Provide a comma-delimited list of nodes to collect sosreports from.
+Provide a comma-delimited list of nodes to collect sosreports from, or a regex string to
+be used to compare discovered node names against. If using a regex, only nodes matching the regex
+will be used - i.e. it can be used as a whitelist but not a blacklist.
 
-Providing this option causes a cluster's profile to not discover a list of nodes on its own.
+This option can be handed multiple regex strings separated by commas. Additionally, both whole node
+names/addresses and regex strings may be provided at the same time.
 .TP
 \fB\-\-no\-pkg\-check\fR
 Do not perform package checks. Most cluster profiles check against installed packages to determine

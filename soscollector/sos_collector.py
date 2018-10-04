@@ -420,7 +420,7 @@ this utility or remote systems that it connects to.
 
     def get_nodes_from_cluster(self):
         '''Collects the list of nodes from the determined cluster cluster'''
-        if self.config['cluster_type'] and not self.config['nodes']:
+        if self.config['cluster_type']:
             nodes = self.config['cluster']._get_nodes()
             self.log_debug('Node list: %s' % nodes)
             return nodes
@@ -448,6 +448,7 @@ this utility or remote systems that it connects to.
         the user. If there is not a match, the node is removed from the list'''
         for regex in self.config['nodes']:
             try:
+                regex = fnmatch.translate(regex)
                 if re.match(regex, node):
                     return True
             except re.error as err:
