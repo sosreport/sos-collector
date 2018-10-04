@@ -577,13 +577,16 @@ this utility or remote systems that it connects to.
 
     def _collect(self, client):
         '''Runs sosreport on each node'''
-        if not client.local:
-            client.sosreport()
-        else:
-            if not self.config['no_local']:
+        try:
+            if not client.local:
                 client.sosreport()
-        if client.retrieved:
-            self.retrieved += 1
+            else:
+                if not self.config['no_local']:
+                    client.sosreport()
+            if client.retrieved:
+                self.retrieved += 1
+        except Exception as err:
+            self.log_error("Error running sosreport: %s" % err)
 
     def close_all_connections(self):
         '''Close all ssh sessions for nodes'''
