@@ -329,26 +329,38 @@ class SosNode():
             pass
         self.cleanup()
 
+    def _determine_ssh_error(self, errors):
+        '''Used to handle ssh exceptions when trying to connect the node.
+
+            errors: the 'errors' dict from the exception raised
+
+            returns: either a formatted error string or None
+        '''
+        for err in errors:
+            errno = errors[err].errno
+            if errno == 103:
+                return 'Key exchange failed'
+            if errno == 108:
+                return 'SSH version is unsupported'
+            if errno == 111:
+                return ("Could not open SSH session on port %s" %
+                        self.config['ssh_port'])
+            if errno == 115:
+                return "No valid SSH user '%s'" % self.config['ssh_user']
+        return None
+
     def open_ssh_session(self):
         '''Create the persistent ssh session we use on the node'''
         try:
-            msg = ''
             self.client = paramiko.SSHClient()
             self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
             self.client.load_system_host_keys()
-            if not self.config['password']:
-                self.log_debug(
-                    'Opening passwordless session to %s' % self.address)
-                self.client.connect(self.address,
-                                    username=self.config['ssh_user'],
-                                    timeout=15)
-            else:
-                self.log_debug(
-                    'Opening session to %s with password' % self.address)
-                self.client.connect(self.address,
-                                    username=self.config['ssh_user'],
-                                    password=self.config['password'],
-                                    timeout=15)
+            self.log_debug('Opening session to %s.' % self.address)
+            self.client.connect(self.address,
+                                username=self.config['ssh_user'],
+                                port=self.config['ssh_port'],
+                                password=self.config['password'] or None,
+                                timeout=15)
             self.log_debug('%s successfully connected' % self._hostname)
             return True
         except paramiko.AuthenticationException:
@@ -367,8 +379,11 @@ class SosNode():
                 self.log_error('Provided hostname did not resolve.')
             else:
                 self.log_error('Socket error trying to connect: %s' % err)
-        except Exception as e:
-            self.log_error('Exception caught while trying to connect: %s' % e)
+        except Exception as err:
+            msg = "Unable to connect: %s" % err
+            if err.errors:
+                msg = self._determine_ssh_error(err.errors)
+            self.log_error(msg)
         raise
 
     def close_ssh_session(self):

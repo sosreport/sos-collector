@@ -82,7 +82,7 @@ if __name__ == '__main__':
     parser.add_argument('--master', help='Specify a remote master node')
     parser.add_argument('-o', '--only-plugins', action="append",
                         help='Run these plugins only')
-    parser.add_argument('-p', '--ssh-port',
+    parser.add_argument('-p', '--ssh-port', type=int,
                         help='Specify SSH port for all nodes')
     parser.add_argument('--password', action='store_true', default=False,
                         help='Prompt for user password for nodes')

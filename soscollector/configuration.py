@@ -40,7 +40,7 @@ class Configuration(dict):
         self['sos_mod'] = {}
         self['master'] = ''
         self['strip_sos_path'] = ''
-        self['ssh_port'] = '22'
+        self['ssh_port'] = 22
         self['ssh_user'] = 'root'
         self['sos_cmd'] = 'sosreport --batch'
         self['no_local'] = False
