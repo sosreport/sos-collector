@@ -387,7 +387,7 @@ class SosNode():
                 self.log_error('Socket error trying to connect: %s' % err)
         except Exception as err:
             msg = "Unable to connect: %s" % err
-            if err.errors:
+            if hasattr(err, 'errors'):
                 msg = self._determine_ssh_error(err.errors)
             self.log_error(msg)
         raise
