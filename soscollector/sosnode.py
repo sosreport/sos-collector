@@ -245,7 +245,13 @@ class SosNode():
         '''
         for host_type in self.config['host_types']:
             host = self.config['host_types'][host_type](self.address)
-            rel_string = self.read_file(host.release_file)
+            rel_string = self.read_file(host.release_file).strip()
+            # force to str. Older py versions will return a string, newer will
+            # return bytes. Forcing to string eases host profile maintenance
+            try:
+                rel_string = rel_string.decode('utf-8')
+            except AttributeError:
+                pass
             if host._check_enabled(rel_string):
                 self.log_debug("Host installation found to be %s" %
                                host.distribution)
