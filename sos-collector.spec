@@ -1,6 +1,6 @@
 Summary: Capture sosreports from multiple nodes simultaneously
 Name: sos-collector
-Version: 1.4
+Version: 1.5
 Release: 1%{?dist}
 Source0: http://people.redhat.com/jhunsake/sos-collector/%{name}-%{version}.tar.gz
 License: GPLv2
@@ -71,6 +71,10 @@ install -p -m644 man/en/sos-collector.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/
 %license LICENSE
 
 %changelog
+* Thu Oct 11 2018 Jake Hunsaker <jhunsake@redhat.com> - 1.5-1
+- New upstream release
+- Resolves CVE-2018-14650
+
 * Fri Jun 22 2018 Jake Hunsaker <jhunsake@redhat.com> 1.4-1
 - New upstream release
 
