@@ -138,12 +138,10 @@ class SosNode():
 
     def _fmt_output(self, stdout=None, stderr=None, rc=0):
         '''Formats the returned output from a command into a dict'''
-        c = {}
-        c['status'] = rc
-        if isinstance(stdout, six.string_types):
-            stdout = [str(stdout)]
-        if isinstance(stderr, six.string_types):
-            stderr = [str(stderr)]
+        if isinstance(stdout, (six.string_types, bytes)):
+            stdout = [stdout.decode('utf-8')]
+        if isinstance(stderr, (six.string_types, bytes)):
+            stderr = [stderr.decode('utf-8')]
         if stdout:
             stdout = ''.join(s for s in stdout) or True
         if stderr:
