@@ -41,6 +41,8 @@ class SosHost():
     container_runtime = None
     container_image = None
     sos_path_strip = None
+    sos_pkg_name = None  # package name in deb/rpm/etc
+    sos_bin_path = None  # path to sosreport binary
 
     def __init__(self, address):
         self.address = address

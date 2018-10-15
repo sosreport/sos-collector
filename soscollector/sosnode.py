@@ -154,7 +154,7 @@ class SosNode():
     def _load_sos_info(self):
         '''Queries the node for information about the installed version of sos
         '''
-        cmd = self.host.prefix + self.host.pkg_query('sos')
+        cmd = self.host.prefix + self.host.pkg_query(self.host.sos_pkg_name)
         res = self.run_command(cmd)
         if res['status'] == 0:
             ver = res['stdout'].splitlines()[-1].split('-')[1]
@@ -275,7 +275,7 @@ class SosNode():
     def run_command(self, cmd, timeout=180, get_pty=False, need_root=False):
         '''Runs a given cmd, either via the SSH session or locally'''
         if cmd.startswith('sosreport'):
-            cmd = cmd.replace('sosreport', '/usr/sbin/sosreport')
+            cmd = cmd.replace('sosreport', self.host.sos_bin_path)
             need_root = True
         if need_root:
             get_pty = True

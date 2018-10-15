@@ -1,4 +1,4 @@
-# Copyright Red Hat 2018, Jake Hunsaker <jhunsake@redhat.com>
+# Copyright Canonical 2018, Bryan Quigley <bryan.quigley@canonical.com>
 # This program is free software; you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation; either version 2 of the License, or
@@ -16,38 +16,21 @@
 from soscollector.hosts import SosHost
 
 
-class RedHatHost(SosHost):
-    '''Base class for defining Red Hat family systems'''
+class DebianHost(SosHost):
+    '''Base class for defining Debian based systems'''
 
-    distribution = 'Red Hat'
-    release_file = '/etc/redhat-release'
-    releases = ['fedora', 'red hat', 'centos']
+    distribution = 'Debian'
+    releases = ['ubuntu', 'debian']
     package_manager = {
-        'name': 'rpm',
-        'query': 'rpm -q'
+        'name': 'dpkg',
+        'query': "dpkg-query -W -f='${Package}-${Version}\\\n' "
     }
-    sos_pkg_name = 'sos'
-    sos_bin_path = '/usr/sbin/sosreport'
+    sos_pkg_name = 'sosreport'
+    sos_bin_path = '/usr/bin/sosreport'
 
     def check_enabled(self, rel_string):
         for release in self.releases:
-            if release in rel_string.lower():
+            if release in rel_string:
                 return True
         return False
-
-
-class RedHatAtomicHost(RedHatHost):
-
-    containerized = True
-    container_runtime = 'docker'
-    container_image = 'registry.access.redhat.com/rhel7/support-tools'
-    sos_path_strip = '/host'
-
-    def check_enabled(self, rel_string):
-        return 'Atomic Host' in rel_string
-
-    def set_sos_prefix(self):
-        return "atomic run --replace --name=sos-collector-tmp %(image)s "
-
-    def set_cleanup_cmd(self):
-        return 'docker rm sos-collector-tmp'
+# vim:ts=4 et sw=4
