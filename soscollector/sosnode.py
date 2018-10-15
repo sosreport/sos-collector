@@ -305,11 +305,16 @@ class SosNode():
                 raise socket.timeout
         else:
             proc = Popen(cmd, shell=True, stdin=PIPE, stdout=PIPE, stderr=PIPE)
-            stdout, stderr = proc.communicate()
-            if self.config['become_root']:
-                proc.communicate(input=self.config['root_password'] + '\n')
-            if self.config['need_sudo']:
-                proc.communicate(input=self.config['sude_pw'] + '\n')
+            if self.config['become_root'] and need_root:
+                stdout, stderr = proc.communicate(
+                    input=self.config['root_password'] + '\n'
+                )
+            elif self.config['need_sudo'] and need_root:
+                stdout, stderr = proc.communicate(
+                    input=self.config['sudo_pw'] + '\n'
+                )
+            else:
+                stdout, stderr = proc.communicate()
             rc = proc.returncode
             if stdout:
                 sout = (stdout or True)
@@ -591,7 +596,7 @@ class SosNode():
                     return False
             else:
                 self.log_debug("Moving %s to %s" % (path, destdir))
-                shutil.move(path, dest)
+                shutil.copy(path, dest)
             return True
         except Exception as err:
             self.log_debug("Failed to retrieve %s: %s" % (path, err))
@@ -628,6 +633,10 @@ class SosNode():
                 except Exception:
                     self.log_error('Failed to make archive readable')
                     return False
+                try:
+                    self.make_archive_readable(self.sos_path + '.md5')
+                except Exception:
+                    self.log_debug('Failed to make md5 readable')
             self.logger.info('Retrieving sosreport from %s' % self.address)
             self.log_info('Retrieving sosreport...')
             ret = self.retrieve_file(self.sos_path)
@@ -698,7 +707,7 @@ class SosNode():
 
         This is only used when we're not connecting as root.
         '''
-        cmd = 'chmod +r %s' % filepath
+        cmd = 'chmod o+r %s' % filepath
         res = self.run_command(cmd, timeout=10, need_root=True)
         if res['status'] == 0:
             return True
