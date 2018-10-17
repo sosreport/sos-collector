@@ -72,7 +72,8 @@ class SosCollector():
         self.logger.setLevel(logging.DEBUG)
         self.logfile = tempfile.NamedTemporaryFile(
             mode="w+",
-            dir=self.config['tmp_dir'])
+            dir=self.config['tmp_dir'],
+            delete=False)
         hndlr = logging.StreamHandler(self.logfile)
         hndlr.setFormatter(logging.Formatter(
             '%(asctime)s %(levelname)s: %(message)s'))
@@ -87,7 +88,8 @@ class SosCollector():
         self.console.setLevel(logging.DEBUG)
         self.console_log_file = tempfile.NamedTemporaryFile(
             mode="w+",
-            dir=self.config['tmp_dir'])
+            dir=self.config['tmp_dir'],
+            delete=False)
         chandler = logging.StreamHandler(self.console_log_file)
         cfmt = logging.Formatter('%(asctime)s %(levelname)s: %(message)s')
         chandler.setFormatter(cfmt)
