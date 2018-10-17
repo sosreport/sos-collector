@@ -264,7 +264,6 @@ this utility or remote systems that it connects to.
         self.console.info("\nsos-collector (version %s)\n" % __version__)
         intro_msg = self._fmt_msg(disclaimer % self.config['tmp_dir'])
         self.console.info(intro_msg)
-        self.configure_sos_cmd()
         prompt = "\nPress ENTER to continue, or CTRL-C to quit\n"
         if not self.config['batch']:
             input(prompt)
@@ -332,6 +331,7 @@ this utility or remote systems that it connects to.
             self.config['cluster'].modify_sos_cmd()
         self.get_nodes()
         self.intro()
+        self.configure_sos_cmd()
 
     def intro(self):
         '''Prints initial messages and collects user and case if not
