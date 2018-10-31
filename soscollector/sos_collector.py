@@ -504,22 +504,6 @@ this utility or remote systems that it connects to.
         except (TypeError, ValueError):
             self.config['hostlen'] = len(self.config['master'])
 
-    def can_run_local_sos(self):
-        '''Check if sosreport can be run as the current user, or if we need
-        to invoke sudo'''
-        if os.geteuid() != 0:
-            self.log_debug('Not running as root. Need sudo for local sos')
-            self.need_local_sudo = True
-            msg = ('\nLocal sosreport requires root. Provide sudo password'
-                   'or press ENTER to skip: ')
-            self.local_sudopw = getpass(prompt=msg)
-            self.console.info('\n')
-            if not self.local_sudopw:
-                self.logger.info('Will not collect local sos, no password')
-                return False
-        self.log_debug('Able to collect local sos')
-        return True
-
     def _connect_to_node(self, node):
         '''Try to connect to the node, and if we can add to the client list to
         run sosreport on

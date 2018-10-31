@@ -316,11 +316,7 @@ class SosNode():
             else:
                 stdout, stderr = proc.communicate()
             rc = proc.returncode
-            if stdout:
-                sout = (stdout or True)
-            else:
-                sout = None
-            return self._fmt_output(stdout=sout, stderr=stderr, rc=rc)
+            return self._fmt_output(stdout=stdout, stderr=stderr, rc=rc)
 
     def sosreport(self):
         '''Run a sosreport on the node, then collect it'''
