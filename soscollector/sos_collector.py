@@ -409,12 +409,31 @@ this utility or remote systems that it connects to.
         If a list of nodes is given, this is not run, however the cluster
         can still be run if the user sets a --cluster-type manually
         '''
+        checks = list(self.clusters.values())
+        for cluster in checks:
+            checks.remove(cluster)
+            cluster.master = self.master
+            if cluster.check_enabled():
+                cname = cluster.__class__.__name__
+                self.log_debug("Installation matches %s, checking for layered "
+                               "profiles" % cname)
+                for remaining in checks:
+                    if issubclass(remaining.__class__, cluster.__class__):
+                        rname = remaining.__class__.__name__
+                        self.log_debug("Layered profile %s found. "
+                                       "Checking installation"
+                                       % rname)
+                        remaining.master = self.master
+                        if remaining.check_enabled():
+                            self.log_debug("Installation matches both layered "
+                                           "profile %s and base profile %s, "
+                                           "setting cluster type to layered "
+                                           "profile" % (rname, cname))
+                            cluster = remaining
+                            break
 
-        for clus in self.clusters:
-            self.clusters[clus].master = self.master
-            if self.clusters[clus].check_enabled():
-                self.config['cluster'] = self.clusters[clus]
-                name = str(self.clusters[clus].__class__.__name__).lower()
+                self.config['cluster'] = cluster
+                name = str(cluster.__class__.__name__).lower()
                 self.config['cluster_type'] = name
                 self.log_info(
                     'Cluster type set to %s' % self.config['cluster_type'])
