@@ -48,13 +48,13 @@ class SosCollector():
         self.master = False
         self.retrieved = 0
         self.need_local_sudo = False
+        self.clusters = self.config['cluster_types']
         if not self.config['list_options']:
             try:
                 if not self.config['tmp_dir']:
                     self.create_tmp_dir()
                 self._setup_logging()
                 self.log_debug('Executing %s' % ' '.join(s for s in sys.argv))
-                self.clusters = self.config['cluster_types']
                 self.log_debug("Found cluster profiles: %s"
                                % self.clusters.keys())
                 self.log_debug("Found supported host types: %s"
@@ -63,8 +63,6 @@ class SosCollector():
                 self.prep()
             except KeyboardInterrupt:
                 self._exit('Exiting on user cancel', 130)
-        else:
-            self._load_clusters()
 
     def _setup_logging(self):
         # behind the scenes logging
