@@ -16,6 +16,7 @@
 import os
 import fnmatch
 
+from pipes import quote
 from soscollector.clusters import Cluster
 from getpass import getpass
 
@@ -31,6 +32,22 @@ class ovirt(Cluster):
         ('no-hypervisors', False, 'Do not collect from hypervisors')
     ]
 
+    def _sql_scrub(self, val):
+        '''
+        Manually sanitize SQL queries since we can't leave this up to the
+        driver since we do not have an actual DB connection
+        '''
+        if not val:
+            return '%'
+
+        invalid_chars = ['\x00', '\\', '\n', '\r', '\032', '"', '\'']
+        if any(x in invalid_chars for x in val):
+            self.log_warn("WARNING: Cluster option \'%s\' contains invalid "
+                          "characters. Using '%%' instead." % val)
+            return '%'
+
+        return val
+
     def setup(self):
         self.pg_pass = False
         if not self.get_option('no-database'):
@@ -38,13 +55,14 @@ class ovirt(Cluster):
         self.format_db_cmd()
 
     def format_db_cmd(self):
-        cluster = self.get_option('cluster') or '%'
-        datacenter = self.get_option('datacenter') or '%'
-        self.dbcmd = '/usr/share/ovirt-engine/dbscripts/engine-psql.sh -c \"'
-        self.dbcmd += ("select host_name from vds_static where cluster_id in "
-                       "(select cluster_id from cluster where name like \'%s\'"
-                       " and storage_pool_id in (select id from storage_pool "
-                       "where name like \'%s\'))\"" % (cluster, datacenter))
+        cluster = self._sql_scrub(self.get_option('cluster'))
+        datacenter = self._sql_scrub(self.get_option('datacenter'))
+        query = ("select host_name from vds_static where cluster_id in "
+                 "(select cluster_id from cluster where name like '%s'"
+                 " and storage_pool_id in (select id from storage_pool "
+                 "where name like '%s'))" % (cluster, datacenter))
+        self.dbcmd = ('/usr/share/ovirt-engine/dbscripts/engine-psql.sh '
+                      '-c {}'.format(quote(query)))
         self.log_debug('Query command for ovirt DB set to: %s' % self.dbcmd)
 
     def get_nodes(self):

@@ -13,6 +13,7 @@
 # with this program; if not, write to the Free Software Foundation, Inc.,
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+from pipes import quote
 from soscollector.clusters import Cluster
 
 
@@ -32,7 +33,7 @@ class kubernetes(Cluster):
     def get_nodes(self):
         self.cmd += ' get nodes'
         if self.get_option('label'):
-            self.cmd += ' -l %s ' % self.get_option('label')
+            self.cmd += ' -l %s ' % quote(self.get_option('label'))
         res = self.exec_master_cmd(self.cmd)
         if res['status'] == 0:
             nodes = []

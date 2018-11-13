@@ -26,6 +26,7 @@ import six
 import time
 
 from distutils.version import LooseVersion
+from pipes import quote
 from subprocess import Popen, PIPE
 
 
@@ -450,7 +451,7 @@ class SosNode():
 
         label = self.determine_sos_label()
         if label:
-            self.sos_cmd = ' %s %s' % (self.sos_cmd, label)
+            self.sos_cmd = ' %s %s' % (self.sos_cmd, quote(label))
 
         if self.config['sos_opt_line']:
             return True
@@ -464,7 +465,7 @@ class SosNode():
                                'enabled but do not exist' % not_only)
             only = self._fmt_sos_opt_list(self.config['only_plugins'])
             if only:
-                self.sos_cmd += ' --only-plugins=%s' % only
+                self.sos_cmd += ' --only-plugins=%s' % quote(only)
             return True
 
         if self.config['skip_plugins']:
@@ -477,7 +478,7 @@ class SosNode():
                                'already not enabled' % not_skip)
             skipln = self._fmt_sos_opt_list(skip)
             if skipln:
-                self.sos_cmd += ' --skip-plugins=%s' % skipln
+                self.sos_cmd += ' --skip-plugins=%s' % quote(skipln)
 
         if self.config['enable_plugins']:
             # only run enable for plugins that are disabled
@@ -490,18 +491,18 @@ class SosNode():
                                'are already enabled or do not exist' % not_on)
             enable = self._fmt_sos_opt_list(opts)
             if enable:
-                self.sos_cmd += ' --enable-plugins=%s' % enable
+                self.sos_cmd += ' --enable-plugins=%s' % quote(enable)
 
         if self.config['plugin_options']:
             opts = [o for o in self.config['plugin_options']
                     if self._plugin_exists(o.split('.')[0])
                     and self._plugin_option_exists(o.split('=')[0])]
             if opts:
-                self.sos_cmd += ' -k %s' % ','.join(o for o in opts)
+                self.sos_cmd += ' -k %s' % quote(','.join(o for o in opts))
 
         if self.config['preset']:
             if self._preset_exists(self.config['preset']):
-                self.sos_cmd += ' --preset=%s' % self.config['preset']
+                self.sos_cmd += ' --preset=%s' % quote(self.config['preset'])
             else:
                 self.log_debug('Requested to enable preset %s but preset does '
                                'not exist on node' % self.config['preset'])

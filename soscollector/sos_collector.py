@@ -32,6 +32,7 @@ from concurrent.futures import ThreadPoolExecutor
 from .sosnode import SosNode
 from distutils.sysconfig import get_python_lib
 from getpass import getpass
+from pipes import quote
 from six.moves import input
 from textwrap import fill
 from soscollector import __version__
@@ -360,32 +361,34 @@ this utility or remote systems that it connects to.
     def configure_sos_cmd(self):
         '''Configures the sosreport command that is run on the nodes'''
         if self.config['sos_opt_line']:
-            filt = ['&', '|', '>', '<']
+            filt = ['&', '|', '>', '<', ';']
             if any(f in self.config['sos_opt_line'] for f in filt):
                 self.log_warn('Possible shell script found in provided sos '
                               'command. Ignoring --sos-cmd option entirely.')
                 self.config['sos_opt_line'] = None
             else:
                 self.config['sos_cmd'] = '%s %s' % (
-                    self.config['sos_cmd'], self.config['sos_opt_line'])
+                    self.config['sos_cmd'], quote(self.config['sos_opt_line']))
                 self.log_debug("User specified manual sosreport command. "
                                "Command set to %s" % self.config['sos_cmd'])
                 return True
         if self.config['case_id']:
-            self.config['sos_cmd'] += ' --case-id=%s' % self.config['case_id']
+            self.config['sos_cmd'] += ' --case-id=%s' % (
+                quote(self.config['case_id']))
         if self.config['alloptions']:
             self.config['sos_cmd'] += ' --alloptions'
         if self.config['verify']:
             self.config['sos_cmd'] += ' --verify'
         if self.config['log_size']:
             self.config['sos_cmd'] += (' --log-size=%s'
-                                       % self.config['log_size'])
+                                       % quote(self.config['log_size']))
         if self.config['sysroot']:
-            self.config['sos_cmd'] += ' -s %s' % self.config['sysroot']
+            self.config['sos_cmd'] += ' -s %s' % quote(self.config['sysroot'])
         if self.config['chroot']:
-            self.config['sos_cmd'] += ' -c %s' % self.config['chroot']
+            self.config['sos_cmd'] += ' -c %s' % quote(self.config['chroot'])
         if self.config['compression']:
-            self.config['sos_cmd'] += ' -z %s' % self.config['compression']
+            self.config['sos_cmd'] += ' -z %s' % (
+                quote(self.config['compression']))
         self.log_debug('Initial sos cmd set to %s' % self.config['sos_cmd'])
 
     def connect_to_master(self):
@@ -408,7 +411,7 @@ this utility or remote systems that it connects to.
         can still be run if the user sets a --cluster-type manually
         '''
         checks = list(self.clusters.values())
-        for cluster in checks:
+        for cluster in self.clusters.values():
             checks.remove(cluster)
             cluster.master = self.master
             if cluster.check_enabled():
