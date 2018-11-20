@@ -132,8 +132,8 @@ class SosCollector():
             out, err = cmd.communicate()
             err = err.decode('utf-8')
             if 'Bad configuration option' in err or 'Usage:' in err:
-                msg = ('ControlPersist not supported by local SSH installation,'
-                      ' cannot proceed.')
+                msg = ('ControlPersist not supported by local SSH installation'
+                       ' - cannot proceed.')
                 self.log_error(msg)
                 raise Exception(msg)
             return True
