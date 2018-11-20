@@ -138,6 +138,7 @@ class SosCollector():
                 raise Exception(msg)
             return True
         except Exception as err:
+            self.log_error("Could not create control socket: %s" % err)
             raise
 
     def _exit(self, msg, error=1):
