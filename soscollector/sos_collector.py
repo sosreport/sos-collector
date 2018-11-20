@@ -283,10 +283,9 @@ class SosCollector():
         '''Based on configuration, performs setup for collection'''
         disclaimer = ("""\
 This utility is used to collect sosreports from multiple \
-nodes simultaneously. It uses the python-paramiko library \
-to manage the SSH connections to remote systems. If this \
-library is not acceptable for use in your environment, \
-you should not use this utility.
+nodes simultaneously. It uses OpenSSH's ControlPersist feature \
+to connect to nodes and run commands remotely. If your system \
+installation of OpenSSH is older than 5.6, please upgrade.
 
 An archive of sosreport tarballs collected from the nodes will be \
 generated in %s and may be provided to an appropriate support representative.
