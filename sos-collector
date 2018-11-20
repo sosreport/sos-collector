@@ -122,3 +122,6 @@ if __name__ == '__main__':
             sc.list_options()
     except KeyboardInterrupt:
         raise SystemExit()
+    except Exception as err:
+        print("Fatal error: %s" % err.message)
+        raise SystemExit()

@@ -55,6 +55,7 @@ class SosCollector():
                 if not self.config['tmp_dir']:
                     self.create_tmp_dir()
                 self._setup_logging()
+                self._check_for_control_persist()
                 self.log_debug('Executing %s' % ' '.join(s for s in sys.argv))
                 self.log_debug("Found cluster profiles: %s"
                                % self.clusters.keys())
@@ -64,6 +65,8 @@ class SosCollector():
                 self.prep()
             except KeyboardInterrupt:
                 self._exit('Exiting on user cancel', 130)
+            except Exception:
+                raise
 
     def _setup_logging(self):
         # behind the scenes logging
@@ -103,6 +106,39 @@ class SosCollector():
         else:
             ui.setLevel(logging.INFO)
         self.console.addHandler(ui)
+
+    def _check_for_control_persist(self):
+        '''Checks to see if the local system supported SSH ControlPersist.
+
+        ControlPersist allows OpenSSH to keep a single open connection to a
+        remote host rather than building a new session each time. This is the
+        same feature that Ansible uses in place of paramiko, which we have a
+        need to drop in sos-collector.
+
+        This check relies on feedback from the ssh binary. The command being
+        run should always generate stderr output, but depending on what that
+        output reads we can determine if ControlPersist is supported or not.
+
+        For our purposes, a host that does not support ControlPersist is not
+        able to run sos-collector.
+
+        Returns
+            True if ControlPersist is supported, else raise Exception.
+        '''
+        try:
+            ssh_cmd = ['ssh', '-o', 'ControlPersist']
+            cmd = subprocess.Popen(ssh_cmd, stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
+            out, err = cmd.communicate()
+            err = err.decode('utf-8')
+            if 'Bad configuration option' in err or 'Usage:' in err:
+                msg = ('ControlPersist not supported by local SSH installation,'
+                      ' cannot proceed.')
+                self.log_error(msg)
+                raise Exception(msg)
+            return True
+        except Exception as err:
+            raise
 
     def _exit(self, msg, error=1):
         '''Used to safely terminate if sos-collector encounters an error'''
@@ -575,12 +611,12 @@ this utility or remote systems that it connects to.
                 self.master.collect_extra_cmd(files)
         msg = '\nSuccessfully captured %s of %s sosreports'
         self.log_info(msg % (self.retrieved, self.report_num))
+        self.close_all_connections()
         if self.retrieved > 0:
             self.create_cluster_archive()
         else:
             msg = 'No sosreports were collected, nothing to archive...'
             self._exit(msg, 1)
-        self.close_all_connections()
 
     def _collect(self, client):
         '''Runs sosreport on each node'''
