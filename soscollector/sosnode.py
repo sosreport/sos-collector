@@ -75,8 +75,6 @@ class SosNode():
     def _create_ssh_command(self):
         '''Build the complete ssh command for this node'''
         cmd = "ssh -oControlPath=%s " % self.control_path
-        if self.config['ssh_port'] != 22:
-            cmd += "-p%s " % self.config['ssh_port']
         cmd += "%s@%s " % (self.config['ssh_user'], self.address)
         return cmd
 
@@ -404,9 +402,17 @@ class SosNode():
         # parameters to establish the initial connection
         self.log_debug('Opening SSH session to create control socket')
         connected = False
-        cmd = ("ssh -oControlPersist=600 -oControlMaster=auto "
+        ssh_key = ''
+        ssh_port = ''
+        if self.config['ssh_port'] != 22:
+            ssh_port = "-p%s " % self.config['ssh_port']
+        if self.config['ssh_key']:
+            ssh_key = "-i%s" % self.config['ssh_key']
+        cmd = ("ssh %s %s -oControlPersist=600 -oControlMaster=auto "
                "-oStrictHostKeyChecking=no -oControlPath=%s %s@%s "
-               "\"echo Connected\"" % (self.control_path,
+               "\"echo Connected\"" % (ssh_key,
+                                       ssh_port,
+                                       self.control_path,
                                        self.config['ssh_user'],
                                        self.address))
         res = pexpect.spawn(cmd, encoding='utf-8')
@@ -414,7 +420,7 @@ class SosNode():
         connect_expects = [
             u'Connected',
             u'password:',
-            u'Permission denied, please try again.',
+            u'.*Permission denied.*',
             u'.* port .*: No route to host',
             pexpect.TIMEOUT
         ]

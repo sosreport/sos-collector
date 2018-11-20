@@ -42,6 +42,7 @@ class Configuration(dict):
         self['strip_sos_path'] = ''
         self['ssh_port'] = 22
         self['ssh_user'] = 'root'
+        self['ssh_key'] = None
         self['sos_cmd'] = 'sosreport --batch'
         self['no_local'] = False
         self['tmp_dir'] = None
