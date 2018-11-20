@@ -5,7 +5,7 @@ Collect sosreports from multiple (cluster) nodes simultaneously
 sos-collector is a utility designed to collect sosreports from multiple nodes simultaneously and package them in a single archive. It is ideally suited for clustered environments, but can also be used for manually-defined sets of standalone nodes.
 
 # Usage
-sos-collector leverages paramiko to open SSH sessions to the target nodes from the local system it is run on. 
+sos-collector leverages OpenSSH's ControlPersist functionality to open SSH sessions to the target nodes from the local system it is run on. 
 
 By default, sos-collector *assumes* that SSH keys have been installed on any nodes it tries to connect to. This can be changed by using the `--password` option which will prompt the user to enter
 an SSH password. This password is assumed to be the same for all nodes. If you have a different root password for each node, you should deploy SSH keys and use the default behavoir.
@@ -33,10 +33,10 @@ You can also manually force a specific type of cluster using `--cluster-type`, E
 
 # Node enumeration
 
-The profile for each cluster contains the logic to enumerate and report the nodes in the cluster to sos-collector. However, a user may also specify a list of nodes alongside a given `--master` or `--cluster-type`. In the event that neither is provided, the first node in the list given to sos-collector is considered to be the master node. For example:
+The profile for each cluster contains the logic to enumerate and report the nodes in the cluster to sos-collector. However, a user may also specify a list of nodes alongside a given `--master` or `--cluster-type`. In the event that neither is provided, the first node in the list given to sos-collector is considered to be the master node. This list can contain either fully resolvable hostnames or a regex pattern to match. For example:
 
 `$ sos-collector --nodes=node1.example.com,node2.example.com`
-
+`$ sos-collector --nodes=node1.example.com,node(2-4).example.com`
 
 
 # Installation
