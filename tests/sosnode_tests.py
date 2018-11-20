@@ -6,7 +6,7 @@ from soscollector.configuration import Configuration
 class SosNodeTests(unittest.TestCase):
 
     def setUp(self):
-        args = {'nodes': 'localhost'}
+        args = {'nodes': 'localhost', 'tmp_dir': '.'}
         self.config = Configuration(args=args)
         self.node = SosNode('127.0.0.1', self.config, force=True,
                             load_facts=False)
@@ -21,4 +21,4 @@ class SosNodeTests(unittest.TestCase):
     def test_command_exec(self):
         out = self.node.run_command('echo sos-collector')
         self.assertEquals(out['status'], 0)
-        self.assertEquals(out['stdout'], 'sos-collector\n')
+        self.assertEquals(out['stdout'], u'sos-collector\r\n')
