@@ -101,6 +101,18 @@ class SosNode():
     def _hostname(self):
         return self.hostname if self.hostname else self.address
 
+    @property
+    def control_socket_exists(self):
+        '''Check if the SSH control socket exists
+
+        The control socket is automatically removed by the SSH daemon in the
+        event that the last connection to the node was greater than the timeout
+        set by the ControlPersist option. This can happen for us if we are
+        collecting from a large number of nodes, and the timeout expires before
+        we start collection.
+        '''
+        return os.path.exists(self.control_path)
+
     def _sanitize_log_msg(self, msg):
         '''Attempts to obfuscate sensitive information in log messages such as
         passwords'''
@@ -295,6 +307,20 @@ class SosNode():
                         sudo or su - as appropriate and to input the password
             force_local - force a command to run locally. Mainly used for scp.
         '''
+        if not self.control_socket_exists:
+            self.log_debug('Control socket does not exist, attempting to '
+                           're-create')
+            try:
+                _sock = self._create_ssh_session()
+                if not _sock:
+                    self.log_debug('Failed to re-create control socket')
+                    raise Exception('SSH control socket does not exist')
+            except Exception as err:
+                self.log_error('Cannot run command: control socket does not '
+                               'exist')
+                self.log_debug("Error while trying to create new SSH control "
+                               "socket: %s" % err)
+                raise
         if cmd.startswith('sosreport'):
             cmd = cmd.replace('sosreport', self.host.sos_bin_path)
             need_root = True
