@@ -25,6 +25,7 @@ import six
 
 from distutils.version import LooseVersion
 from pipes import quote
+from soscollector.exceptions import *
 from subprocess import Popen, PIPE
 
 
@@ -276,7 +277,7 @@ class SosNode():
                                host.distribution)
                 return host
         self.log_error('Unable to determine host installation. Ignoring node')
-        raise Exception('Host did not match any supported distributions')
+        raise UnsupportedHostException
 
     def check_sos_version(self, ver):
         '''Checks to see if the sos installation on the node is AT LEAST the
@@ -314,7 +315,7 @@ class SosNode():
                 _sock = self._create_ssh_session()
                 if not _sock:
                     self.log_debug('Failed to re-create control socket')
-                    raise Exception('SSH control socket does not exist')
+                    raise ControlSocketMissingException
             except Exception as err:
                 self.log_error('Cannot run command: control socket does not '
                                'exist')
@@ -346,7 +347,7 @@ class SosNode():
                 rc = res.exitstatus
                 return {'status': rc, 'stdout': out}
             elif output == 1:
-                raise pexpect.TIMEOUT
+                raise CommandTimeoutException(cmd)
         else:
             try:
                 proc = Popen(shlex.split(cmd), shell=get_pty, stdin=PIPE,
@@ -384,26 +385,6 @@ class SosNode():
         except Exception:
             pass
         self.cleanup()
-
-    def _determine_ssh_error(self, errors):
-        '''Used to handle ssh exceptions when trying to connect the node.
-
-            errors: the 'errors' dict from the exception raised
-
-            returns: either a formatted error string or None
-        '''
-        for err in errors:
-            errno = errors[err].errno
-            if errno == 103:
-                return 'Key exchange failed'
-            if errno == 108:
-                return 'SSH version is unsupported'
-            if errno == 111:
-                return ("Could not open SSH session on port %s" %
-                        self.config['ssh_port'])
-            if errno == 115:
-                return "No valid SSH user '%s'" % self.config['ssh_user']
-        return None
 
     def _create_ssh_session(self):
         '''
@@ -466,18 +447,21 @@ class SosNode():
                 if pass_index == 0:
                     connected = True
                 elif pass_index == 1:
-                    raise Exception('Invalid password provided.')
+                    # Note that we do not get an exitstatus here, so matching
+                    # this line means an invalid password will be reported for
+                    # both invalid passwords and invalid user names
+                    raise InvalidPasswordException
                 elif pass_index == 2:
-                    raise Exception('Timeout hit waiting for password auth.')
+                    raise TimeoutPasswordAuthException
             else:
-                raise Exception('Host requested password, but none provided')
+                raise PasswordRequestException
         elif index == 2:
-            raise Exception('Permission denied while trying to authenticate')
+            raise AuthPermissionDeniedException
         elif index == 3:
-            raise Exception("Could not connect to %s on port %s"
-                            % (self.address, self.config['ssh_port']))
+            raise ConnectionException(self.address,
+                                          self.config['ssh_port'])
         elif index == 4:
-            raise Exception('Timeout occurred trying to connect.')
+            raise ConnectionTimeoutException
         else:
             raise Exception("Unknown error, client returned %s" % res.before)
         if connected:
@@ -668,7 +652,7 @@ class SosNode():
                                   res['stderr']))
                 raise Exception(err)
             return path
-        except pexpect.TIMEOUT:
+        except CommandTimeoutException:
             self.log_error('Timeout exceeded')
             raise
         except Exception as e:

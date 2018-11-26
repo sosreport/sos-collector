@@ -36,6 +36,7 @@ from pipes import quote
 from six.moves import input
 from textwrap import fill
 from soscollector import __version__
+from soscollector.exceptions import ControlPersistUnsupportedException
 
 
 class SosCollector():
@@ -125,21 +126,14 @@ class SosCollector():
         Returns
             True if ControlPersist is supported, else raise Exception.
         '''
-        try:
-            ssh_cmd = ['ssh', '-o', 'ControlPersist']
-            cmd = subprocess.Popen(ssh_cmd, stdout=subprocess.PIPE,
-                                   stderr=subprocess.PIPE)
-            out, err = cmd.communicate()
-            err = err.decode('utf-8')
-            if 'Bad configuration option' in err or 'Usage:' in err:
-                msg = ('ControlPersist not supported by local SSH installation'
-                       ' - cannot proceed.')
-                self.log_error(msg)
-                raise Exception(msg)
-            return True
-        except Exception as err:
-            self.log_error("Could not create control socket: %s" % err)
-            raise
+        ssh_cmd = ['ssh', '-o', 'ControlPersist']
+        cmd = subprocess.Popen(ssh_cmd, stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE)
+        out, err = cmd.communicate()
+        err = err.decode('utf-8')
+        if 'Bad configuration option' in err or 'Usage:' in err:
+            raise ControlPersistUnsupportedException
+        return True
 
     def _exit(self, msg, error=1):
         '''Used to safely terminate if sos-collector encounters an error'''
@@ -435,7 +429,7 @@ this utility or remote systems that it connects to.
             self.master = SosNode(self.config['master'], self.config)
         except Exception as e:
             self.log_debug('Failed to connect to master: %s' % e)
-            self._exit('Could not connect to master node.\nAborting...', 1)
+            self._exit('Could not connect to master node. Aborting...', 1)
 
     def determine_cluster(self):
         '''This sets the cluster type and loads that cluster's cluster.
