@@ -54,7 +54,7 @@ class ConnectionException(Exception):
     def __init__(self, address='', port=''):
         message = ("Could not connect to host %s on specified port %s"
                    % (address, port))
-        super(PortConnectionException, self).__init__(message)
+        super(ConnectionException, self).__init__(message)
 
 
 class CommandTimeoutException(Exception):

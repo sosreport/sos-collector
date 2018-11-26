@@ -429,6 +429,7 @@ class SosNode():
             u'password:',
             u'.*Permission denied.*',
             u'.* port .*: No route to host',
+            u'.*Could not resolve hostname.*',
             pexpect.TIMEOUT
         ]
 
@@ -458,9 +459,10 @@ class SosNode():
         elif index == 2:
             raise AuthPermissionDeniedException
         elif index == 3:
-            raise ConnectionException(self.address,
-                                          self.config['ssh_port'])
+            raise ConnectionException(self.address, self.config['ssh_port'])
         elif index == 4:
+            raise ConnectionException(self.address)
+        elif index == 5:
             raise ConnectionTimeoutException
         else:
             raise Exception("Unknown error, client returned %s" % res.before)
