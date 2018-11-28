@@ -124,5 +124,5 @@ if __name__ == '__main__':
     except KeyboardInterrupt:
         raise SystemExit()
     except Exception as err:
-        print("Fatal error: %s" % err.message)
+        print("Fatal error: %s" % err)
         raise SystemExit()
