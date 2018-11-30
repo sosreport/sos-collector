@@ -150,15 +150,14 @@ class SosCollector():
         if self.config['cluster_options']:
             for opt in self.config['cluster_options']:
                 match = False
-                for option in self.clusters[opt.cluster].options:
-                    if opt.name == option.name:
-                        match = True
-                        # override the default from CLI
-                        option.value = self._validate_option(option, opt)
-                if not match:
-                    self._exit('Unknown option provided: %s.%s' % (
-                        opt.cluster, opt.name
-                    ))
+                for clust in self.clusters:
+                    for option in self.clusters[clust].options:
+                        if opt.name == option.name:
+                            match = True
+                            break
+            if not match:
+                self._exit('Unknown cluster option provided: %s.%s'
+                           % (opt.cluster, opt.name))
 
     def _validate_option(self, default, cli):
         '''Checks to make sure that the option given on the CLI is valid.
@@ -216,8 +215,19 @@ class SosCollector():
 
     def list_options(self):
         '''Display options for available clusters'''
+        _opts = {}
+        for _cluster in self.clusters:
+            for opt in self.clusters[_cluster].options:
+                if opt.name not in _opts.keys():
+                    _opts[opt.name] = opt
+                else:
+                    clust = _opts[opt.name].cluster
+                    if any(c in opt.cluster for c in clust):
+                        _opts[opt.name].cluster = ','.join(clust)
+                    else:
+                        _opts[opt.name] = opt
         print('\nThe following cluster options are available:\n')
-        print('{:15} {:15} {:<10} {:10} {:<}'.format(
+        print('{:25} {:15} {:<10} {:10} {:<}'.format(
             'Cluster',
             'Option Name',
             'Type',
@@ -225,16 +235,19 @@ class SosCollector():
             'Description'
         ))
 
-        for cluster in self.clusters:
-            for opt in self.clusters[cluster].options:
-                optln = '{:15} {:15} {:<10} {:<10} {:<10}'.format(
-                    opt.cluster,
-                    opt.name,
-                    opt.opt_type.__name__,
-                    str(opt.value),
-                    opt.description
-                )
-                print(optln)
+        for _opt in sorted(_opts, key=lambda x: _opts[x].cluster):
+            _clus = None
+            opt = _opts[_opt]
+            if isinstance(opt.cluster, list):
+                _clus = opt.cluster[0]
+            optln = '{:25} {:15} {:<10} {:<10} {:<10}'.format(
+                _clus or opt.cluster,
+                opt.name,
+                opt.opt_type.__name__,
+                str(opt.value),
+                opt.description
+            )
+            print(optln)
         print('\nOptions take the form of cluster.name=value'
               '\nE.G. "ovirt.no-database=True" or "pacemaker.offline=False"')
 

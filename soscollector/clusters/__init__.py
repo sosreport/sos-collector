@@ -19,7 +19,7 @@ import subprocess
 from soscollector.configuration import ClusterOption
 
 
-class Cluster():
+class Cluster(object):
 
     option_list = []
     packages = ('',)
@@ -40,7 +40,10 @@ class Cluster():
 
         self.master = None
         self.config = config
-        self.cluster_type = self.__class__.__name__
+        self.cluster_type = [self.__class__.__name__]
+        for cls in self.__class__.__bases__:
+            if cls.__name__ != 'Cluster':
+                self.cluster_type.append(cls.__name__)
         self.node_list = None
         self.logger = logging.getLogger('sos_collector')
         self.console = logging.getLogger('sos_collector_console')
@@ -83,6 +86,11 @@ class Cluster():
         '''This is used to by clusters to check if a cluster option was
         supplied to sos-collector.
         '''
+        # check CLI before defaults
+        for opt in self.config['cluster_options']:
+            if opt.name == option and opt.cluster in self.cluster_type:
+                return opt.value
+        # provide defaults otherwise
         for opt in self.options:
             if opt.name == option:
                 return opt.value
