@@ -1,6 +1,6 @@
 Summary: Capture sosreports from multiple nodes simultaneously
 Name: sos-collector
-Version: 1.5
+Version: 1.6
 Release: 1%{?dist}
 Source0: http://people.redhat.com/jhunsake/sos-collector/%{name}-%{version}.tar.gz
 License: GPLv2
@@ -11,7 +11,7 @@ Obsoletes: clustersos < 1.2.2-2
 Provides: clustersos = %{version}-%{release}
 
 
-%if 0%{?rhel}
+%if 0%{?rhel} == 7
 BuildRequires: python-devel
 Requires: python-futures
 Requires: python-six
@@ -33,7 +33,7 @@ is run on the nodes.
 %setup -q
 
 %build
-%if 0%{?rhel}
+%if 0%{?rhel} == 7
 %py2_build
 %else
 %py3_build
@@ -42,7 +42,7 @@ is run on the nodes.
 %install
 mkdir -p ${RPM_BUILD_ROOT}%{_mandir}/man1
 install -p -m644 man/en/sos-collector.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/
-%if 0%{?rhel}
+%if 0%{?rhel} == 7
 %py2_install
 %else
 %py3_install
@@ -51,7 +51,7 @@ install -p -m644 man/en/sos-collector.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/
 
 
 %check
-%if 0%{?rhel}
+%if 0%{?rhel} == 7
 %{__python2} setup.py test
 %else
 %{__python3} setup.py test
@@ -59,7 +59,7 @@ install -p -m644 man/en/sos-collector.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/
 
 %files
 %{_bindir}/sos-collector
-%if 0%{?rhel}
+%if 0%{?rhel} == 7
 %{python2_sitelib}/*
 %else
 %{python3_sitelib}/*
@@ -69,6 +69,11 @@ install -p -m644 man/en/sos-collector.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/
 %license LICENSE
 
 %changelog
+* Tue Dec 11 2018 Jake Hunsaker <jhunsake@redhat.com> - 1.6-1
+- Drop paramiko dependency, use OpenSSH ControlPersist instead
+- Layered cluster profiles can now accept base profile options
+- Debian/Ubuntu hosts now supported
+
 * Thu Oct 11 2018 Jake Hunsaker <jhunsake@redhat.com> - 1.5-1
 - New upstream release
 - Resolves CVE-2018-14650
