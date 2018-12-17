@@ -59,6 +59,7 @@ Become the root user on the remote node when connecting as a non-root user.
 \fB\-\-batch\fR
 Run in non-interactive mode. This will skip prompts for user input, with the
 exception of a prompt for the SSH password.
+.TP
 \fB\-\-all\-logs\fR
 Sosreport option. Collects all logs regardless of size. 
 
@@ -229,6 +230,9 @@ the nodes. Consider increasing \fB\-\-timeout\fR when using this option.
 .TP
 \fB\-z\fR COMPRESSION, \fB\-\-compression-type\fR COMPRESSION
 Sosreport option. Override the default compression type.
+
+.SH SEE ALSO
+.BR sosreport (1)
 
 .SH MAINTAINER
     Jake Hunsaker <jhunsake@redhat.com>
