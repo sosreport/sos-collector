@@ -154,7 +154,7 @@ class SosNode():
         here we prefix the command with the correct bits
         '''
         if self.config['become_root']:
-            return "su -c '%s'" % cmd
+            return "su -c %s" % quote(cmd)
         if self.config['need_sudo']:
             return "sudo -S %s" % cmd
         return cmd
