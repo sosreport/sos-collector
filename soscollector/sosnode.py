@@ -26,7 +26,6 @@ import six
 from distutils.version import LooseVersion
 from pipes import quote
 from soscollector.exceptions import *
-from subprocess import Popen, PIPE
 
 
 class SosNode():
@@ -308,7 +307,7 @@ class SosNode():
                         sudo or su - as appropriate and to input the password
             force_local - force a command to run locally. Mainly used for scp.
         '''
-        if not self.control_socket_exists:
+        if not self.control_socket_exists and not self.local:
             self.log_debug('Control socket does not exist, attempting to '
                            're-create')
             try:
@@ -333,42 +332,21 @@ class SosNode():
             get_pty = True
         if not self.local and not force_local:
             cmd = "%s %s" % (self.ssh_cmd, quote(cmd))
-            res = pexpect.spawn(cmd, encoding='utf-8')
-            if need_root:
-                if self.config['need_sudo']:
-                    res.sendline(self.config['sudo_pw'])
-                if self.config['become_root']:
-                    res.sendline(self.config['root_password'])
-            output = res.expect([pexpect.EOF, pexpect.TIMEOUT],
-                                timeout=timeout)
-            if output == 0:
-                out = res.before
-                res.close()
-                rc = res.exitstatus
-                return {'status': rc, 'stdout': out}
-            elif output == 1:
-                raise CommandTimeoutException(cmd)
-        else:
-            try:
-                proc = Popen(shlex.split(cmd), shell=get_pty, stdin=PIPE,
-                             stdout=PIPE, stderr=PIPE)
-                if self.config['become_root'] and need_root:
-                    stdout, stderr = proc.communicate(
-                        input=self.config['root_password'] + '\n'
-                    )
-                elif self.config['need_sudo'] and need_root:
-                    stdout, stderr = proc.communicate(
-                        input=self.config['sudo_pw'] + '\n'
-                    )
-                else:
-                    stdout, stderr = proc.communicate()
-                proc.wait()
-                rc = proc.returncode
-                return {'status': rc, 'stdout': stdout or stderr}
-            except Exception as err:
-                self.log_error("Exception while running command %s: %s"
-                               % (cmd, err))
-                raise
+        res = pexpect.spawn(cmd, encoding='utf-8')
+        if need_root:
+            if self.config['need_sudo']:
+                res.sendline(self.config['sudo_pw'])
+            if self.config['become_root']:
+                res.sendline(self.config['root_password'])
+        output = res.expect([pexpect.EOF, pexpect.TIMEOUT],
+                            timeout=timeout)
+        if output == 0:
+            out = res.before
+            res.close()
+            rc = res.exitstatus
+            return {'status': rc, 'stdout': out}
+        elif output == 1:
+            raise CommandTimeoutException(cmd)
 
     def sosreport(self):
         '''Run a sosreport on the node, then collect it'''
