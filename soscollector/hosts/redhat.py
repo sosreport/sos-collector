@@ -51,3 +51,22 @@ class RedHatAtomicHost(RedHatHost):
 
     def set_cleanup_cmd(self):
         return 'docker rm sos-collector-tmp'
+
+
+class RedHatCoreOSHost(RedHatHost):
+
+    containerized = True
+    container_runtime = 'podman'
+    container_image = 'registry.redhat.io/rhel7/support-tools'
+    sos_path_strip = '/host'
+
+    def check_enabled(self, rel_string):
+        return 'CoreOS' in rel_string
+
+    def set_sos_prefix(self):
+        return 'podman container runlabel RUN %(image)s '
+
+    def set_cleanup_cmd(self):
+        # Currently on RHCOS, the support-tools image automatically sets
+        # the container name to the image name
+        return 'podman rm registry.redhat.io/rhel7/support-tools:latest'
