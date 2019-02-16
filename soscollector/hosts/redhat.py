@@ -64,9 +64,8 @@ class RedHatCoreOSHost(RedHatHost):
         return 'CoreOS' in rel_string
 
     def set_sos_prefix(self):
-        return 'podman container runlabel RUN %(image)s '
+        return ('podman container runlabel --name=sos-collector-tmp '
+                'RUN %(image)s ')
 
     def set_cleanup_cmd(self):
-        # Currently on RHCOS, the support-tools image automatically sets
-        # the container name to the image name
-        return 'podman rm registry.redhat.io/rhel7/support-tools:latest'
+        return 'podman rm sos-collector-tmp'
