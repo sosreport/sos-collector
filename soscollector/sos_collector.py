@@ -362,7 +362,12 @@ this utility or remote systems that it connects to.
                            'included.\nAborting...\n', 1)
 
         if self.config['cluster_type']:
-            self.config['cluster'] = self.clusters[self.config['cluster_type']]
+            if self.config['cluster_type'] == 'none':
+                self.config['cluster'] = self.clusters['jbon']
+            else:
+                self.config['cluster'] = self.clusters[
+                                            self.config['cluster_type']
+                                        ]
             self.config['cluster'].master = self.master
         else:
             self.determine_cluster()
@@ -454,6 +459,7 @@ this utility or remote systems that it connects to.
         can still be run if the user sets a --cluster-type manually
         '''
         checks = list(self.clusters.values())
+        checks.remove('jbon')
         for cluster in self.clusters.values():
             checks.remove(cluster)
             cluster.master = self.master

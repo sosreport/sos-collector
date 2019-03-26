@@ -89,6 +89,11 @@ the master node if  \fB"--master"\fR is supplied.
 
 Setting \fB--cluster-type\fR skips this step and forcibly sets a particular profile.
 
+Using a value of \fBnone\fR or \fBjbon\fR (just a bunch of nodes) will effectively
+disable all cluster-specific checks, and cause sos-collector to only use the nodes
+specified by the \fB--nodes\fR option. Note that in this scenario, regex string(s)
+for node names will be ignored.
+
 Example: \fBsos-collector --cluster-type=kubernetes\fR will force the kubernetes profile
 to be run, and thus set sosreport options and attempt to determine a list of nodes using
 that profile. 
