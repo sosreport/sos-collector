@@ -62,7 +62,6 @@ class SosNode():
             self.local = True
         if self.connected and load_facts:
             self.host = self.determine_host()
-            self._set_sos_prefix(self.host.set_sos_prefix())
             if not self.host:
                 self.connected = False
                 self.close_ssh_session()
@@ -70,6 +69,7 @@ class SosNode():
             self.log_debug("Host facts found to be %s" %
                            self.host.report_facts())
             self.get_hostname()
+            self.create_sos_container()
             self._load_sos_info()
 
     def _create_ssh_command(self):
@@ -81,6 +81,26 @@ class SosNode():
     def _fmt_msg(self, msg):
         return '{:<{}} : {}'.format(self._hostname, self.config['hostlen'] + 1,
                                     msg)
+
+    def create_sos_container(self):
+        '''If the host is containerized, create the container we'll be using
+        '''
+        if self.host.containerized:
+            res = self.run_command(self.host.create_sos_container())
+            if res['status'] in [0, 125]:  # 125 means container exists
+                ret = self.run_command(self.host.restart_sos_container())
+                if ret['status'] == 0:
+                    self.log_debug("Temporary container %s created"
+                                   % self.host.sos_container_name)
+                    return True
+                else:
+                    self.log_error("Could not start container after create: %s"
+                                   % ret['stdout'])
+                    raise Exception
+            else:
+                self.log_error("Could not create container on host: %s"
+                               % res['stdout'])
+                raise Exception
 
     def file_exists(self, fname):
         '''Checks for the presence of fname on the remote node'''
@@ -175,8 +195,8 @@ class SosNode():
     def _load_sos_info(self):
         '''Queries the node for information about the installed version of sos
         '''
-        cmd = self.host.prefix + self.host.pkg_query(self.host.sos_pkg_name)
-        res = self.run_command(cmd)
+        cmd = self.host.pkg_query(self.host.sos_pkg_name)
+        res = self.run_command(cmd, use_container=True)
         if res['status'] == 0:
             ver = res['stdout'].splitlines()[-1].split('-')[1]
             self.sos_info['version'] = ver
@@ -185,16 +205,16 @@ class SosNode():
             self.log_error('sos is not installed on this node')
             self.connected = False
             return False
-        cmd = self.host.prefix + 'sosreport -l'
-        sosinfo = self.run_command(cmd)
+        cmd = 'sosreport -l'
+        sosinfo = self.run_command(cmd, use_container=True)
         if sosinfo['status'] == 0:
             self._load_sos_plugins(sosinfo['stdout'])
         if self.check_sos_version('3.6'):
             self._load_sos_presets()
 
     def _load_sos_presets(self):
-        cmd = self.host.prefix + 'sosreport --list-presets'
-        res = self.run_command(cmd)
+        cmd = 'sosreport --list-presets'
+        res = self.run_command(cmd, use_container=True)
         if res['status'] == 0:
             for line in res['stdout'].splitlines():
                 if line.strip().startswith('name:'):
@@ -230,16 +250,6 @@ class SosNode():
                     r = line.split(',')
                     res.extend(p.strip() for p in r if p.strip())
         return res
-
-    def _set_sos_prefix(self, prefix):
-        '''Applies any configuration settings to the sos prefix defined by a
-        host type
-        '''
-        if self.host.containerized:
-            prefix = prefix % {
-                'image': self.config['image'] or self.host.container_image
-            }
-        self.host.prefix = prefix
 
     def read_file(self, to_read):
         '''Reads the specified file and returns the contents'''
@@ -294,7 +304,7 @@ class SosNode():
         return False
 
     def run_command(self, cmd, timeout=180, get_pty=False, need_root=False,
-                    force_local=False):
+                    force_local=False, use_container=False):
         '''Runs a given cmd, either via the SSH session or locally
 
         Arguments:
@@ -306,6 +316,8 @@ class SosNode():
                         True tells sos-collector to format the command with
                         sudo or su - as appropriate and to input the password
             force_local - force a command to run locally. Mainly used for scp.
+            use_container - Run this command in a container *IF* the host is
+                            containerized
         '''
         if not self.control_socket_exists and not self.local:
             self.log_debug('Control socket does not exist, attempting to '
@@ -327,6 +339,8 @@ class SosNode():
         if need_root:
             get_pty = True
             cmd = self._format_cmd(cmd)
+        if use_container and self.host.containerized:
+            cmd = self.host.format_container_command(cmd)
         self.log_debug('Running command %s' % cmd)
         if 'atomic' in cmd:
             get_pty = True
@@ -509,8 +523,6 @@ class SosNode():
         '''Use host facts and compare to the cluster type to modify the sos
         command if needed'''
         self.sos_cmd = self.config['sos_cmd']
-        self.sos_cmd = self.host.prefix + self.sos_cmd
-
         label = self.determine_sos_label()
         if label:
             self.sos_cmd = ' %s %s' % (self.sos_cmd, quote(label))
@@ -620,7 +632,8 @@ class SosNode():
             path = False
             res = self.run_command(self.sos_cmd,
                                    timeout=self.config['timeout'],
-                                   get_pty=True, need_root=True)
+                                   get_pty=True, need_root=True,
+                                   use_container=True)
             if res['status'] == 0:
                 for line in res['stdout'].splitlines():
                     if fnmatch.fnmatch(line, '*sosreport-*tar*'):

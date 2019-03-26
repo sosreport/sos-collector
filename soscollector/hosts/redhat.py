@@ -46,11 +46,20 @@ class RedHatAtomicHost(RedHatHost):
     def check_enabled(self, rel_string):
         return 'Atomic Host' in rel_string
 
-    def set_sos_prefix(self):
-        return "atomic run --replace --name=sos-collector-tmp %(image)s "
+    def create_sos_container(self):
+        _cmd = ("{runtime} run -di --name {name} --privileged --ipc=host"
+                " --net=host --pid=host -e HOST=/host -e NAME={name} -e "
+                "IMAGE={image} -v /run:/run -v /var/log:/var/log -v "
+                "/etc/machine-id:/etc/machine-id -v "
+                "/etc/localtime:/etc/localtime -v /:/host {image}")
+        return _cmd.format(
+                    runtime=self.container_runtime,
+                    name=self.sos_container_name,
+                    image=self.container_image
+                )
 
     def set_cleanup_cmd(self):
-        return 'docker rm sos-collector-tmp'
+        return 'docker rm --force sos-collector-tmp'
 
 
 class RedHatCoreOSHost(RedHatHost):
@@ -63,9 +72,17 @@ class RedHatCoreOSHost(RedHatHost):
     def check_enabled(self, rel_string):
         return 'CoreOS' in rel_string
 
-    def set_sos_prefix(self):
-        return ('podman container runlabel --name=sos-collector-tmp '
-                'RUN %(image)s ')
+    def create_sos_container(self):
+        _cmd = ("{runtime} run -di --name {name} --privileged --ipc=host"
+                " --net=host --pid=host -e HOST=/host -e NAME={name} -e "
+                "IMAGE={image} -v /run:/run -v /var/log:/var/log -v "
+                "/etc/machine-id:/etc/machine-id -v "
+                "/etc/localtime:/etc/localtime -v /:/host {image}")
+        return _cmd.format(
+                    runtime=self.container_runtime,
+                    name=self.sos_container_name,
+                    image=self.container_image
+                )
 
     def set_cleanup_cmd(self):
-        return 'podman rm sos-collector-tmp'
+        return 'podman rm --force %s' % self.sos_container_name

@@ -43,6 +43,7 @@ class SosHost():
     sos_path_strip = None
     sos_pkg_name = None  # package name in deb/rpm/etc
     sos_bin_path = None  # path to sosreport binary
+    sos_container_name = 'sos-collector-tmp'
 
     def __init__(self, address):
         self.address = address
@@ -94,3 +95,36 @@ class SosHost():
         returned here
         '''
         return ''
+
+    def create_sos_container(self):
+        '''Returns the command that will create the container that will be
+        used for running commands inside a container on hosts that require it.
+
+        This will use the container runtime defined for the host type to
+        launch a container. From there, we use the defined runtime to exec into
+        the container's namespace.
+        '''
+        return ''
+
+    def restart_sos_container(self):
+        '''Restarts the container created for sos-collector if it has stopped.
+
+        This is called immediately after create_sos_container() as the command
+        to create the container will exit and the container will stop. For
+        current container runtimes, subsequently starting the container will
+        default to opening a bash shell in the container to keep it running,
+        thus allowing us to exec into it again.
+        '''
+        return "%s start %s" % (self.container_runtime,
+                                self.sos_container_name)
+
+    def format_container_command(self, cmd):
+        '''Returns the command that allows us to exec into the created
+        container for sos-collector.
+        '''
+        if self.container_runtime:
+            return '%s exec %s %s' % (self.container_runtime,
+                                      self.sos_container_name,
+                                      cmd)
+        else:
+            return cmd
