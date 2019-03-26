@@ -31,7 +31,7 @@ class RedHatHost(SosHost):
 
     def check_enabled(self, rel_string):
         for release in self.releases:
-            if release in rel_string.lower():
+            if release in rel_string.lower() and 'CoreOS' not in rel_string:
                 return True
         return False
 
