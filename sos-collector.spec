@@ -1,6 +1,6 @@
 Summary: Capture sosreports from multiple nodes simultaneously
 Name: sos-collector
-Version: 1.6
+Version: 1.7
 Release: 1%{?dist}
 Source0: http://people.redhat.com/jhunsake/sos-collector/%{name}-%{version}.tar.gz
 License: GPLv2
@@ -69,6 +69,12 @@ install -p -m644 man/en/sos-collector.1 ${RPM_BUILD_ROOT}%{_mandir}/man1/
 %license LICENSE
 
 %changelog
+* Mon Apr 01 2019 Jake Hunsaker <jhunsake@redhat.com> - 1.7-1
+- New upstream release
+- Overhaul mechanism of execution of sosreport in containers
+- Added RHCOS support
+- Added a 'none' cluster type
+
 * Tue Dec 11 2018 Jake Hunsaker <jhunsake@redhat.com> - 1.6-1
 - Drop paramiko dependency, use OpenSSH ControlPersist instead
 - Layered cluster profiles can now accept base profile options
