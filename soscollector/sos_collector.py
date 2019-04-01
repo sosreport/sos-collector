@@ -459,7 +459,6 @@ this utility or remote systems that it connects to.
         can still be run if the user sets a --cluster-type manually
         '''
         checks = list(self.clusters.values())
-        checks.remove('jbon')
         for cluster in self.clusters.values():
             checks.remove(cluster)
             cluster.master = self.master
