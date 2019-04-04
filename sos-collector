@@ -87,6 +87,9 @@ if __name__ == '__main__':
                         help='Specify SSH port for all nodes')
     parser.add_argument('--password', action='store_true', default=False,
                         help='Prompt for user password for nodes')
+    parser.add_argument('--password-per-node', action='store_true',
+                        default=False,
+                        help='Prompt for password separately for each node')
     parser.add_argument('--preset', default='', required=False,
                         help='Specify a sos preset to use')
     parser.add_argument('-s', '--sysroot', default='',

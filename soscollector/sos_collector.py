@@ -312,13 +312,14 @@ this utility or remote systems that it connects to.
         if not self.config['batch']:
             input(prompt)
 
-        if not self.config['password']:
+        if (not self.config['password'] and not
+                self.config['password_per_node']):
             self.log_debug('password not specified, assuming SSH keys')
             msg = ('sos-collector ASSUMES that SSH keys are installed on all '
                    'nodes unless the --password option is provided.\n')
             self.console.info(self._fmt_msg(msg))
 
-        if self.config['password']:
+        if self.config['password'] or self.config['password_per_node']:
             self.log_debug('password specified, not using SSH keys')
             msg = ('Provide the SSH password for user %s: '
                    % self.config['ssh_user'])
@@ -575,9 +576,13 @@ this utility or remote systems that it connects to.
     def _connect_to_node(self, node):
         '''Try to connect to the node, and if we can add to the client list to
         run sosreport on
+
+        Positional arguments
+            node - a tuple specifying (address, password). If no password, set
+                   to None
         '''
         try:
-            client = SosNode(node, self.config)
+            client = SosNode(node[0], self.config, password=node[1])
             if client.connected:
                 self.client_list.append(client)
             else:
@@ -590,9 +595,20 @@ this utility or remote systems that it connects to.
         collected sosreports '''
         if self.master.connected:
             self.client_list.append(self.master)
+
         self.console.info("\nConnecting to nodes...")
         filters = [self.master.address, self.master.hostname]
-        nodes = [n for n in self.node_list if n not in filters]
+        nodes = [(n, None) for n in self.node_list if n not in filters]
+
+        if ('password_per_node' in self.config and
+                self.config['password_per_node']):
+            _nodes = []
+            for node in nodes:
+                msg = ("Please enter the password for %s@%s: "
+                       % (self.config['ssh_user'], node[0]))
+                node_pwd = getpass(msg)
+                _nodes.append((node[0], node_pwd))
+            nodes = _nodes
 
         try:
             pool = ThreadPoolExecutor(self.config['threads'])
@@ -615,6 +631,9 @@ this utility or remote systems that it connects to.
         except KeyboardInterrupt:
             self.log_error('Exiting on user cancel\n')
             os._exit(130)
+        except Exception as err:
+            self.log_error('Could not connect to nodes: %s' % err)
+            os._exit(1)
 
         if hasattr(self.config['cluster'], 'run_extra_cmd'):
             self.console.info('Collecting additional data from master node...')

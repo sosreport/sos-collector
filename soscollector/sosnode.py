@@ -30,11 +30,13 @@ from soscollector.exceptions import *
 
 class SosNode():
 
-    def __init__(self, address, config, force=False, load_facts=True):
+    def __init__(self, address, config, password=None, force=False,
+                 load_facts=True):
         self.address = address.strip()
         self.local = False
         self.hostname = None
         self.config = config
+        self._password = password or self.config['password']
         self.sos_path = None
         self.retrieved = False
         self.hash_retrieved = False
@@ -429,13 +431,13 @@ class SosNode():
         if index == 0:
             connected = True
         elif index == 1:
-            if self.config['password']:
+            if self._password:
                 pass_expects = [
                     u'Connected',
                     u'Permission denied, please try again.',
                     pexpect.TIMEOUT
                 ]
-                res.sendline(self.config['password'])
+                res.sendline(self._password)
                 pass_index = res.expect(pass_expects, timeout=15)
                 if pass_index == 0:
                     connected = True

@@ -22,7 +22,8 @@ sos-collector \- Collect sosreports from multiple (cluster) nodes
     [\-\-master MASTER]
     [\-o ONLY_PLUGINS]
     [\-p SSH_PORT]
-    [\-\-password PASSWORD]
+    [\-\-password]
+    [\-\-password\-per\-node]
     [\-\-preset PRESET]
     [\-s|\-\-sysroot SYSROOT]
     [\-\-ssh\-user SSH_USER]
@@ -165,12 +166,17 @@ generated to not contain the relevant output for a given type of cluster.
 
 This option supports providing a comma-delimited list of plugins.
 .TP
-\fB\-\-password\fR PASSWORD
+\fB\-\-password\fR
 Specifying this option will cause sos-collector to prompt the user for an SSH password
 that will be used to connect to all nodes.
 
 If you have differing passwords for the same user across cluster nodes, you should
-deploy SSH keys.
+ideally deploy SSH keys, but the \-\-password\-per\-node option is also available.
+.TP
+\fB\-\-password\-per\-node\fR
+When using this option, sos-collector will prompt the user for the SSH password for
+each node that will have an sosreport collected from it individually before attempting
+to connect to the nodes.
 .TP
 \fB\-\-preset\fR PRESET
 Specify a sos preset to use, note that this requires sos-3.6 or later to be installed
