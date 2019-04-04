@@ -600,8 +600,7 @@ this utility or remote systems that it connects to.
         filters = [self.master.address, self.master.hostname]
         nodes = [(n, None) for n in self.node_list if n not in filters]
 
-        if ('password_per_node' in self.config and
-                self.config['password_per_node']):
+        if self.config['password_per_node']:
             _nodes = []
             for node in nodes:
                 msg = ("Please enter the password for %s@%s: "

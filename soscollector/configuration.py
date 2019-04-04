@@ -86,6 +86,7 @@ class Configuration(dict):
         self['insecure_sudo'] = False
         self['log_size'] = 0
         self['host_types'] = []
+        self['password_per_node'] = False
 
     def parse_node_strings(self):
         '''
