@@ -28,7 +28,7 @@ class jbon(Cluster):
     def get_nodes(self):
         return []
 
-    def checK_enabled(self):
+    def check_enabled(self):
         # This should never be called, but as insurance explicitly never
         # allow this to be enabled via the determine_cluster() path
         return False
