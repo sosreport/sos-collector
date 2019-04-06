@@ -15,6 +15,7 @@
 
 import fnmatch
 import inspect
+import json
 import logging
 import os
 import random
@@ -37,6 +38,8 @@ from six.moves import input
 from textwrap import fill
 from soscollector import __version__
 from soscollector.exceptions import ControlPersistUnsupportedException
+
+COLLECTOR_LIB_DIR = '/var/lib/sos-collector'
 
 
 class SosCollector():
@@ -287,6 +290,60 @@ class SosCollector():
             _fmt = _fmt + fill(line, width, replace_whitespace=False) + '\n'
         return _fmt
 
+    def _load_group_config(self):
+        '''
+        Attempts to load the host group specified on the command line.
+        Host groups are defined via JSON files, typically saved under
+        /var/lib/sos-collector/, although users can specify a full filepath
+        on the commandline to point to one existing anywhere on the system
+
+        Host groups define a list of nodes and/or regexes and optionally the
+        master and cluster-type options.
+        '''
+        if os.path.exists(self.config['group']):
+            fname = self.config['group']
+        elif os.path.exists(
+                os.path.join(COLLECTOR_LIB_DIR, self.config['group'])
+             ):
+                fname = os.path.join(COLLECTOR_LIB_DIR, self.config['group'])
+        else:
+            raise OSError('Group not found')
+
+        self.log_debug("Loading host group %s" % fname)
+
+        with open(fname, 'r') as hf:
+            _group = json.load(hf)
+            for key in ['master', 'cluster_type']:
+                if _group[key]:
+                    self.log_debug("Setting option '%s' to '%s' per host group"
+                                   % (key, _group[key]))
+                    self.config[key] = _group[key]
+            if _group['nodes']:
+                self.log_debug("Adding %s to node list" % _group['nodes'])
+                self.config['nodes'].extend(_group['nodes'])
+
+    def write_host_group(self):
+        '''
+        Saves the results of this run of sos-collector to a host group file
+        on the system so it can be used later on.
+
+        The host group will save the options master, cluster_type, and nodes
+        as determined by sos-collector prior to execution of sosreports.
+        '''
+        cfg = {
+            'name': self.config['save_group'],
+            'master': self.config['master'],
+            'cluster_type': self.config['cluster_type'],
+            'nodes': [n for n in self.node_list]
+        }
+        if not os.path.isdir(COLLECTOR_LIB_DIR):
+            raise OSError("%s no such directory" % COLLECTOR_LIB_DIR)
+        fname = COLLECTOR_LIB_DIR + '/' + cfg['name']
+        with open(fname, 'w') as hf:
+            json.dump(cfg, hf)
+        os.chmod(fname, 0o644)
+        return fname
+
     def prep(self):
         '''Based on configuration, performs setup for collection'''
         disclaimer = ("""\
@@ -349,6 +406,13 @@ this utility or remote systems that it connects to.
                               ' Ignoring request to change user on node')
                 self.config['become_root'] = False
 
+        if self.config['group']:
+            try:
+                self._load_group_config()
+            except Exception as err:
+                self.log_error("Could not load specified group %s: %s"
+                               % (self.config['group'], err))
+
         if self.config['master']:
             self.connect_to_master()
             self.config['no_local'] = True
@@ -380,6 +444,13 @@ this utility or remote systems that it connects to.
             self.config['cluster'].setup()
             self.config['cluster'].modify_sos_cmd()
         self.get_nodes()
+        if self.config['save_group']:
+            gname = self.config['save_group']
+            try:
+                fname = self.write_host_group()
+                self.log_info("Wrote group '%s' to %s" % (gname, fname))
+            except Exception as err:
+                self.log_error("Could not save group %s: %s" % (gname, err))
         self.intro()
         self.configure_sos_cmd()
 

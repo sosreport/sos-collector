@@ -52,6 +52,10 @@ if __name__ == '__main__':
                         help="chroot executed commands to SYSROOT")
     parser.add_argument('-e', '--enable-plugins', action="append",
                         help='Enable specific plugins for sosreport')
+    parser.add_argument('--group', default=None,
+                        help='Use a predefined group JSON file')
+    parser.add_argument('--save-group', default='',
+                        help='Save the resulting node list to a group')
     parser.add_argument('--image', help=('Specify the container image to use'
                                          ' for atomic hosts. Defaults to '
                                          'the rhel7/support-tools image'

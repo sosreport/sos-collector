@@ -47,7 +47,7 @@ class Configuration(dict):
         self['no_local'] = False
         self['tmp_dir'] = None
         self['out_dir'] = '/var/tmp/'
-        self['nodes'] = None
+        self['nodes'] = []
         self['debug'] = False
         self['tmp_dir_created'] = False
         self['cluster_type'] = None
@@ -87,6 +87,8 @@ class Configuration(dict):
         self['log_size'] = 0
         self['host_types'] = []
         self['password_per_node'] = False
+        self['group'] = None
+        self['save_group'] = ''
 
     def parse_node_strings(self):
         '''

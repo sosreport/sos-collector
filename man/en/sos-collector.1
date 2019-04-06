@@ -12,6 +12,8 @@ sos-collector \- Collect sosreports from multiple (cluster) nodes
     [\-\-case\-id CASE_ID]
     [\-\-cluster\-type CLUSTER_TYPE]
     [\-e ENABLE_PLUGINS]
+    [\-\-group GROUP]
+    [\-\-save\-group GROUP]
     [\-\-insecure-sudo]
     [\-k PLUGIN_OPTION]
     [\-\-label LABEL]
@@ -103,6 +105,32 @@ that profile.
 Sosreport option. Use this to enable a plugin that would otherwise not be run.
 
 This option supports providing a comma-delimited list of plugins.
+.TP
+\fB\-\-group\fR GROUP
+Specify an existing host group definition to use.
+
+Host groups are pre-defined settings for the cluster-type, master, and nodes options
+saved in JSON-formatted files under /var/lib/sos-collector/<GROUP>.
+
+If cluster_type and/or master are set in the group, sos-collector behaves as if
+these values were specified on the command-line.
+
+If nodes is defined, sos-collector \fBextends\fR the \fB\-\-nodes\fR option, if set,
+with the nodes or regexes listed in the group.
+
+Note that sos-collector will only write group definitions to /var/lib/sos-collector/
+however the GROUP value may be a filename for any group definitions that exist outside
+of the default location. If you are manually writing these files, use the value \fBnull\fR
+when a python NoneType is expected. Caveat: use \fBstring\fR 'none' if setting cluster_type
+to none.
+.TP
+\fB\-\-save\-group\fR GROUP
+Save the results of this run of sos-collector to a host group definition.
+
+sos-colllector will write a JSON-formatted file with name GROUP to /var/lib/sos-collector/
+with the settings for cluster-type, master, and the node list as discovered by cluster enumeration.
+Note that this means regexes are not directly saved to host groups, but the results of matching against
+those regexes are.
 .TP
 \fB\-\-insecure-sudo\fR
 Use this option when connecting as a non-root user that has passwordless sudo
