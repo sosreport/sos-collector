@@ -68,10 +68,14 @@ class SosNode():
                 self.connected = False
                 self.close_ssh_session()
                 return None
+            if self.local:
+                if self.check_in_container():
+                    self.host.containerized = False
             self.log_debug("Host facts found to be %s" %
                            self.host.report_facts())
             self.get_hostname()
-            self.create_sos_container()
+            if self.host.containerized:
+                self.create_sos_container()
             self._load_sos_info()
 
     def _create_ssh_command(self):
@@ -83,6 +87,19 @@ class SosNode():
     def _fmt_msg(self, msg):
         return '{:<{}} : {}'.format(self._hostname, self.config['hostlen'] + 1,
                                     msg)
+
+    def check_in_container(self):
+        '''
+        Tries to identify if we are currently running in a container or not.
+        '''
+        if os.path.exists('/run/.containerenv'):
+            self.log_debug('Found /run/.containerenv. Running in container.')
+            return True
+        if os.environ.get('container') is not None:
+            self.log_debug("Found env var 'container'. Running in container")
+            return True
+        return False
+
 
     def create_sos_container(self):
         '''If the host is containerized, create the container we'll be using
