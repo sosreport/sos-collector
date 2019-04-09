@@ -66,7 +66,7 @@ class RedHatCoreOSHost(RedHatHost):
 
     containerized = True
     container_runtime = 'podman'
-    container_image = 'registry.redhat.io/rhel7/support-tools'
+    container_image = 'registry.redhat.io/rhel8/support-tools'
     sos_path_strip = '/host'
 
     def check_enabled(self, rel_string):
