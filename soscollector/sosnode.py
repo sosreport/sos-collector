@@ -100,7 +100,6 @@ class SosNode():
             return True
         return False
 
-
     def create_sos_container(self):
         '''If the host is containerized, create the container we'll be using
         '''

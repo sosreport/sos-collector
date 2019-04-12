@@ -26,6 +26,7 @@ class Cluster(object):
     sos_plugins = []
     sos_plugin_options = {}
     sos_preset = ''
+    cluster_name = None
 
     def __init__(self, config):
         '''This is the class that cluster profile should subclass in order to
@@ -49,6 +50,14 @@ class Cluster(object):
         self.console = logging.getLogger('sos_collector_console')
         self.options = []
         self._get_options()
+
+    @classmethod
+    def name(cls):
+        '''Returns the cluster's name as a string.
+        '''
+        if cls.cluster_name:
+            return cls.cluster_name
+        return cls.__name__.lower()
 
     def _get_options(self):
         '''Loads the options defined by a cluster and sets the default value'''

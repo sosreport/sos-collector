@@ -554,8 +554,7 @@ this utility or remote systems that it connects to.
                             break
 
                 self.config['cluster'] = cluster
-                name = str(cluster.__class__.__name__).lower()
-                self.config['cluster_type'] = name
+                self.config['cluster_type'] = cluster.name()
                 self.log_info(
                     'Cluster type set to %s' % self.config['cluster_type'])
                 break
