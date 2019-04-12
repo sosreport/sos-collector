@@ -52,6 +52,7 @@ class kubernetes(Cluster):
 
 class openshift(kubernetes):
 
+    cluster_name = 'OpenShift Container Platform'
     packages = ('atomic-openshift',)
     sos_preset = 'ocp'
     cmd = 'oc'

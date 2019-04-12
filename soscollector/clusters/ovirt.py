@@ -23,6 +23,7 @@ from getpass import getpass
 
 class ovirt(Cluster):
 
+    cluster_name = 'oVirt'
     packages = ('ovirt-engine',)
 
     option_list = [
@@ -122,6 +123,7 @@ class ovirt(Cluster):
 
 class rhv(ovirt):
 
+    cluster_name = 'Red Hat Virtualization'
     packages = ('rhevm', 'rhvm')
     sos_preset = 'rhv'
 
