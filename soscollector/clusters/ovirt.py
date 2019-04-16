@@ -18,13 +18,13 @@ import fnmatch
 
 from pipes import quote
 from soscollector.clusters import Cluster
-from getpass import getpass
 
 
 class ovirt(Cluster):
 
-    cluster_name = 'oVirt'
+    cluster_name = 'Community oVirt'
     packages = ('ovirt-engine',)
+    db_exec = '/usr/share/ovirt-engine/dbscripts/engine-psql.sh -c'
 
     option_list = [
         ('no-database', False, 'Do not collect a database dump'),
@@ -32,6 +32,14 @@ class ovirt(Cluster):
         ('datacenter', '', 'Only collect from hosts in this datacenter'),
         ('no-hypervisors', False, 'Do not collect from hypervisors')
     ]
+
+    def _run_db_query(self, query):
+        '''
+        Wrapper for running DB queries on the master. Any scrubbing of the
+        query should be done _before_ passing the query to this method.
+        '''
+        cmd = "%s %s" % (self.db_exec, quote(query))
+        return self.exec_master_cmd(cmd, need_root=True)
 
     def _sql_scrub(self, val):
         '''
@@ -58,18 +66,16 @@ class ovirt(Cluster):
     def format_db_cmd(self):
         cluster = self._sql_scrub(self.get_option('cluster'))
         datacenter = self._sql_scrub(self.get_option('datacenter'))
-        query = ("select host_name from vds_static where cluster_id in "
-                 "(select cluster_id from cluster where name like '%s'"
-                 " and storage_pool_id in (select id from storage_pool "
-                 "where name like '%s'))" % (cluster, datacenter))
-        self.dbcmd = ('/usr/share/ovirt-engine/dbscripts/engine-psql.sh '
-                      '-c {}'.format(quote(query)))
-        self.log_debug('Query command for ovirt DB set to: %s' % self.dbcmd)
+        self.dbquery = ("SELECT host_name from vds_static where cluster_id in "
+                        "(select cluster_id FROM cluster WHERE name like '%s'"
+                        " and storage_pool_id in (SELECT id FROM storage_pool "
+                        "WHERE name like '%s'))" % (cluster, datacenter))
+        self.log_debug('Query command for ovirt DB set to: %s' % self.dbquery)
 
     def get_nodes(self):
         if self.get_option('no-hypervisors'):
             return []
-        res = self.exec_master_cmd(self.dbcmd, need_root=True)
+        res = self._run_db_query(self.dbquery)
         if res['status'] == 0:
             nodes = res['stdout'].splitlines()[2:-1]
             return [n.split('(')[0].strip() for n in nodes]
@@ -134,3 +140,21 @@ class rhv(ovirt):
             return 'rhvh'
         else:
             return 'rhelh'
+
+
+class rhhi_virt(rhv):
+
+    cluster_name = 'Red Hat Hyperconverged Infrastructure - Virtualization'
+    sos_plugins = ('gluster',)
+    sos_plugin_options = {'gluster.dump': 'on'}
+    sos_preset = 'rhv'
+
+    def check_enabled(self):
+        return (self.master.is_installed('rhvm') and self._check_for_rhhiv())
+
+    def _check_for_rhhiv(self):
+        ret = self._run_db_query('SELECT count(server_id) FROM gluster_server')
+        if ret['status'] == 0:
+            # if there are any entries in this table, RHHI-V is in use
+            return ret['stdout'].splitlines()[2].strip() != '0'
+        return False
