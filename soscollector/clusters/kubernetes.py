@@ -19,6 +19,7 @@ from soscollector.clusters import Cluster
 
 class kubernetes(Cluster):
 
+    cluster_name = 'Community Kubernetes'
     packages = ('kubernetes-master',)
     sos_plugins = ['kubernetes']
     sos_plugin_options = {'kubernetes.all': 'on'}

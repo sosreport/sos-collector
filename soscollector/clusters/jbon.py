@@ -23,6 +23,7 @@ class jbon(Cluster):
     use the provided --nodes list
     '''
 
+    cluster_name = 'Just a Bunch Of Nodes (no cluster)'
     packages = None
 
     def get_nodes(self):

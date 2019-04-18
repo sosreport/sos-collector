@@ -218,19 +218,28 @@ class SosCollector():
 
     def list_options(self):
         '''Display options for available clusters'''
+
+        sys.stdout.write('\nThe following clusters are supported by this '
+                         'installation\n')
+        sys.stdout.write('Use the short name with --cluster-type or cluster '
+                         'options (-c)\n\n')
+        for cluster in sorted(self.clusters, key=lambda x: self.clusters[x]):
+            sys.stdout.write(" {:<15} {:30}\n".format(
+                                cluster,
+                                self.clusters[cluster].cluster_name))
+
         _opts = {}
         for _cluster in self.clusters:
             for opt in self.clusters[_cluster].options:
                 if opt.name not in _opts.keys():
                     _opts[opt.name] = opt
                 else:
-                    clust = _opts[opt.name].cluster
-                    if any(c in opt.cluster for c in clust):
-                        _opts[opt.name].cluster = ','.join(clust)
-                    else:
-                        _opts[opt.name] = opt
-        print('\nThe following cluster options are available:\n')
-        print('{:25} {:15} {:<10} {:10} {:<}'.format(
+                    for clust in opt.cluster:
+                        if clust not in _opts[opt.name].cluster:
+                            _opts[opt.name].cluster.append(clust)
+
+        sys.stdout.write('\nThe following cluster options are available:\n\n')
+        sys.stdout.write(' {:25} {:15} {:<10} {:10} {:<}\n'.format(
             'Cluster',
             'Option Name',
             'Type',
@@ -239,20 +248,17 @@ class SosCollector():
         ))
 
         for _opt in sorted(_opts, key=lambda x: _opts[x].cluster):
-            _clus = None
             opt = _opts[_opt]
-            if isinstance(opt.cluster, list):
-                _clus = opt.cluster[0]
-            optln = '{:25} {:15} {:<10} {:<10} {:<10}'.format(
-                _clus or opt.cluster,
+            optln = ' {:25} {:15} {:<10} {:<10} {:<10}\n'.format(
+                ', '.join(c for c in sorted(opt.cluster)),
                 opt.name,
                 opt.opt_type.__name__,
                 str(opt.value),
-                opt.description
-            )
-            print(optln)
-        print('\nOptions take the form of cluster.name=value'
-              '\nE.G. "ovirt.no-database=True" or "pacemaker.offline=False"')
+                opt.description)
+            sys.stdout.write(optln)
+        sys.stdout.write('\nOptions take the form of cluster.name=value'
+                         '\nE.G. "ovirt.no-database=True" or '
+                         '"pacemaker.offline=False"\n')
 
     def delete_tmp_dir(self):
         '''Removes the temp directory and all collected sosreports'''

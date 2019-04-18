@@ -20,6 +20,7 @@ from soscollector.clusters import Cluster
 class satellite(Cluster):
     """Red Hat Satellite 6"""
 
+    cluster_name = 'Red Hat Satellite 6'
     packages = ('satellite', 'satellite-installer')
 
     def _psql_cmd(self, query):

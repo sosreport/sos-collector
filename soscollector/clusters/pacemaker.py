@@ -18,6 +18,7 @@ from soscollector.clusters import Cluster
 
 class pacemaker(Cluster):
 
+    cluster_name = 'Pacemaker High Availability Cluster Manager'
     sos_plugins = ['pacemaker']
     packages = ('pacemaker',)
     option_list = [
