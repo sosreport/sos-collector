@@ -8,7 +8,7 @@ sos-collector is a utility designed to collect sosreports from multiple nodes si
 sos-collector leverages OpenSSH's ControlPersist functionality to open SSH sessions to the target nodes from the local system it is run on. 
 
 By default, sos-collector *assumes* that SSH keys have been installed on any nodes it tries to connect to. This can be changed by using the `--password` option which will prompt the user to enter
-an SSH password. This password is assumed to be the same for all nodes. If you have a different root password for each node, you should deploy SSH keys and use the default behavoir.
+an SSH password. This password is assumed to be the same for all nodes. If you have a different root password for each node, you should ideally deploy SSH keys, however there is also the `--password-per-node` option which will prompt for a password for each node individually.
 
 **IMPORTANT**: sos-collector itself does not need root privileges, however it does need root privileges on the target nodes in order to run sosreport. By default, SSH session will be opened as root. This can be changed via the `--ssh-user` option. If used, sos-collector will prompt for a `sudo` password.
 
