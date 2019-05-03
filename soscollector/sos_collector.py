@@ -763,9 +763,11 @@ this utility or remote systems that it connects to.
                 for fname in os.listdir(self.config['tmp_dir']):
                     arcname = fname
                     if fname == self.logfile.name.split('/')[-1]:
-                        arcname = 'sos-collector.log'
+                        arcname = 'logs/sos-collector.log'
                     if fname == self.console_log_file.name.split('/')[-1]:
-                        arcname = 'ui.log'
+                        arcname = 'logs/ui.log'
+                    if fname.endswith('.md5'):
+                        arcname = "md5/%s" % fname
                     tar.add(os.path.join(self.config['tmp_dir'], fname),
                             arcname=self.arc_name + '/' + arcname)
                 tar.close()
