@@ -137,7 +137,9 @@ class SosNode():
 
     @property
     def _hostname(self):
-        return self.hostname if self.hostname else self.address
+        if self.hostname and 'localhost' not in self.hostname:
+            return self.hostname
+        return self.address
 
     @property
     def control_socket_exists(self):
