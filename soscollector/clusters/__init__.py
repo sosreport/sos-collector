@@ -107,7 +107,6 @@ class Cluster(object):
 
     def exec_master_cmd(self, cmd, need_root=False):
         '''Used to retrieve output from a (master) node in a cluster'''
-        self.logger.debug('Running %s on %s' % (cmd, self.master.address))
         res = self.master.run_command(cmd, get_pty=True, need_root=need_root)
         if res['stdout']:
             res['stdout'] = res['stdout'].replace('Password:', '')
