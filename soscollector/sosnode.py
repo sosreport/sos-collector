@@ -366,6 +366,9 @@ class SosNode():
             get_pty = True
         if not self.local and not force_local:
             cmd = "%s %s" % (self.ssh_cmd, quote(cmd))
+        else:
+            if get_pty:
+                cmd = "/bin/bash -c %s" % quote(cmd)
         res = pexpect.spawn(cmd, encoding='utf-8')
         if need_root:
             if self.config['need_sudo']:
