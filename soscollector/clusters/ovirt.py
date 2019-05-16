@@ -19,6 +19,8 @@ import fnmatch
 from pipes import quote
 from soscollector.clusters import Cluster
 
+ENGINE_KEY = '/etc/pki/ovirt-engine/keys/engine_id_rsa'
+
 
 class ovirt(Cluster):
 
@@ -57,11 +59,29 @@ class ovirt(Cluster):
 
         return val
 
+    def _check_for_engine_keys(self):
+        '''
+        Checks for the presence of the VDSM ssh keys the manager uses for
+        communication with hypervisors.
+
+        This only runs if we're locally on the RHV-M, *and* if no ssh-keys are
+        called out on the command line, *and* no --password option is given.
+        '''
+        if self.master.local:
+            if not any([self.config['ssh_key'], self.config['password'],
+                        self.config['password_per_node']]):
+                if self.master.file_exists(ENGINE_KEY):
+                    self.config['ssh_key'] = ENGINE_KEY
+                    self.log_debug("Found engine SSH key %s. User command line"
+                                   " does not specify a key or password, using"
+                                   " engine key.")
+
     def setup(self):
         self.pg_pass = False
         if not self.get_option('no-database'):
             self.conf = self.parse_db_conf()
         self.format_db_cmd()
+        self._check_for_engine_keys()
 
     def format_db_cmd(self):
         cluster = self._sql_scrub(self.get_option('cluster'))
