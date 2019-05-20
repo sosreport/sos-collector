@@ -32,7 +32,8 @@ class ovirt(Cluster):
         ('no-database', False, 'Do not collect a database dump'),
         ('cluster', '', 'Only collect from hosts in this cluster'),
         ('datacenter', '', 'Only collect from hosts in this datacenter'),
-        ('no-hypervisors', False, 'Do not collect from hypervisors')
+        ('no-hypervisors', False, 'Do not collect from hypervisors'),
+        ('spm-only', False, 'Only collect from SPM host(s)')
     ]
 
     def _run_db_query(self, query):
@@ -86,10 +87,16 @@ class ovirt(Cluster):
     def format_db_cmd(self):
         cluster = self._sql_scrub(self.get_option('cluster'))
         datacenter = self._sql_scrub(self.get_option('datacenter'))
-        self.dbquery = ("SELECT host_name from vds_static where cluster_id in "
+        self.dbquery = ("SELECT host_name from vds where cluster_id in "
                         "(select cluster_id FROM cluster WHERE name like '%s'"
                         " and storage_pool_id in (SELECT id FROM storage_pool "
                         "WHERE name like '%s'))" % (cluster, datacenter))
+        if self.get_option('spm-only'):
+            # spm_status is an integer with the following meanings
+            # 0 - Normal (not SPM)
+            # 1 - Contending (SPM election in progress, but is not SPM)
+            # 2 - SPM
+            self.dbquery += ' AND spm_status = 2'
         self.log_debug('Query command for ovirt DB set to: %s' % self.dbquery)
 
     def get_nodes(self):
