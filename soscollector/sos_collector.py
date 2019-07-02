@@ -223,7 +223,7 @@ class SosCollector():
                          'installation\n')
         sys.stdout.write('Use the short name with --cluster-type or cluster '
                          'options (-c)\n\n')
-        for cluster in sorted(self.clusters, key=lambda x: self.clusters[x]):
+        for cluster in sorted(self.clusters):
             sys.stdout.write(" {:<15} {:30}\n".format(
                                 cluster,
                                 self.clusters[cluster].cluster_name))
