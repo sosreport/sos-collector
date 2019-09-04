@@ -310,7 +310,7 @@ class SosCollector():
         elif os.path.exists(
                 os.path.join(COLLECTOR_LIB_DIR, self.config['group'])
              ):
-                fname = os.path.join(COLLECTOR_LIB_DIR, self.config['group'])
+            fname = os.path.join(COLLECTOR_LIB_DIR, self.config['group'])
         else:
             raise OSError('Group not found')
 
