@@ -56,8 +56,7 @@ class SosCollector():
         self.clusters = self.config['cluster_types']
         if not self.config['list_options']:
             try:
-                if not self.config['tmp_dir']:
-                    self.create_tmp_dir()
+                self.create_tmp_dir(self.config['tmp_dir'])
                 self._setup_logging()
                 self._check_for_control_persist()
                 self.log_debug('Executing %s' % ' '.join(s for s in sys.argv))
@@ -210,9 +209,9 @@ class SosCollector():
         if self.config['verbose']:
             self.console.debug(msg)
 
-    def create_tmp_dir(self):
+    def create_tmp_dir(self, location='/tmp'):
         '''Creates a temp directory to transfer sosreports to'''
-        tmpdir = tempfile.mkdtemp(prefix='sos-collector-', dir='/var/tmp')
+        tmpdir = tempfile.mkdtemp(prefix='sos-collector-', dir=location)
         self.config['tmp_dir'] = tmpdir
         self.config['tmp_dir_created'] = True
 
@@ -760,16 +759,30 @@ this utility or remote systems that it connects to.
         try:
             self.archive = self._get_archive_path()
             with tarfile.open(self.archive, "w:gz") as tar:
-                for fname in os.listdir(self.config['tmp_dir']):
-                    arcname = fname
-                    if fname == self.logfile.name.split('/')[-1]:
-                        arcname = 'logs/sos-collector.log'
-                    if fname == self.console_log_file.name.split('/')[-1]:
-                        arcname = 'logs/ui.log'
-                    if fname.endswith('.md5'):
-                        arcname = "md5/%s" % fname
-                    tar.add(os.path.join(self.config['tmp_dir'], fname),
-                            arcname=self.arc_name + '/' + arcname)
+                for host in self.client_list:
+                    for fname in host.file_list:
+                        try:
+                            if '.md5' in fname:
+                                arc_name = (self.arc_name + '/md5/' +
+                                            fname.split('/')[-1])
+                            else:
+                                arc_name = (self.arc_name + '/' +
+                                            fname.split('/')[-1])
+                            tar.add(
+                                os.path.join(self.config['tmp_dir'], fname),
+                                arcname=arc_name
+                            )
+                        except Exception as err:
+                            self.log_error("Could not add %s to archive: %s"
+                                           % (arc_name, err))
+                tar.add(
+                    self.logfile.name,
+                    arcname=self.arc_name + '/logs/sos-collector.log'
+                )
+                tar.add(
+                    self.console_log_file.name,
+                    arcname=self.arc_name + '/logs/ui.log'
+                )
                 tar.close()
         except Exception as e:
             msg = 'Could not create archive: %s' % e
@@ -785,5 +798,5 @@ this utility or remote systems that it connects to.
             self.delete_tmp_dir()
         else:
             for f in os.listdir(self.config['tmp_dir']):
-                if re.search('*sosreport-*tar*', f):
+                if re.search('sosreport-*tar*', f):
                     os.remove(os.path.join(self.config['tmp_dir'], f))

@@ -40,6 +40,7 @@ class SosNode():
         self.sos_path = None
         self.retrieved = False
         self.hash_retrieved = False
+        self.file_list = []
         self.sos_info = {
             'version': None,
             'enabled': [],
@@ -746,11 +747,14 @@ class SosNode():
             ret = self.retrieve_file(self.sos_path)
             if ret:
                 self.log_info('Successfully collected sosreport')
+                self.file_list.append(self.sos_path.split('/')[-1])
             else:
                 self.log_error('Failed to retrieve sosreport')
                 raise SystemExit
                 return False
             self.hash_retrieved = self.retrieve_file(self.sos_path + '.md5')
+            if self.hash_retrieved:
+                self.file_list.append(self.sos_path.split('/')[-1] + '.md5')
             return True
         else:
             # sos sometimes fails but still returns a 0 exit code
@@ -799,6 +803,7 @@ class SosNode():
                         continue
                 ret = self.retrieve_file(filename)
                 if ret:
+                    self.file_list.append(filename.split('/')[-1])
                     self.remove_file(filename)
                 else:
                     self.log_error("Unable to retrieve file %s" % filename)
