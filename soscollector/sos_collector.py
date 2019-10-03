@@ -209,7 +209,7 @@ class SosCollector():
         if self.config['verbose']:
             self.console.debug(msg)
 
-    def create_tmp_dir(self, location='/tmp'):
+    def create_tmp_dir(self, location='/var/tmp'):
         '''Creates a temp directory to transfer sosreports to'''
         tmpdir = tempfile.mkdtemp(prefix='sos-collector-', dir=location)
         self.config['tmp_dir'] = tmpdir

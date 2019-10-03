@@ -45,7 +45,7 @@ class Configuration(dict):
         self['ssh_key'] = None
         self['sos_cmd'] = 'sosreport --batch'
         self['no_local'] = False
-        self['tmp_dir'] = None
+        self['tmp_dir'] = '/var/tmp'
         self['out_dir'] = '/var/tmp/'
         self['nodes'] = []
         self['debug'] = False
