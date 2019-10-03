@@ -502,6 +502,8 @@ this utility or remote systems that it connects to.
                 quote(self.config['case_id']))
         if self.config['alloptions']:
             self.config['sos_cmd'] += ' --alloptions'
+        if self.config['all_logs']:
+            self.config['sos_cmd'] += ' --all-logs'
         if self.config['verify']:
             self.config['sos_cmd'] += ' --verify'
         if self.config['log_size']:
