@@ -19,9 +19,7 @@ import logging
 import os
 import pexpect
 import re
-import shlex
 import shutil
-import six
 
 from distutils.version import LooseVersion
 from pipes import quote
@@ -751,7 +749,6 @@ class SosNode():
             else:
                 self.log_error('Failed to retrieve sosreport')
                 raise SystemExit
-                return False
             self.hash_retrieved = self.retrieve_file(self.sos_path + '.md5')
             if self.hash_retrieved:
                 self.file_list.append(self.sos_path.split('/')[-1] + '.md5')

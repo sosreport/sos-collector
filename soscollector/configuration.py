@@ -19,7 +19,6 @@ import pipes
 import re
 import six
 import socket
-import sys
 
 
 class Configuration(dict):

@@ -22,7 +22,6 @@ import random
 import re
 import string
 import tarfile
-import threading
 import tempfile
 import shutil
 import subprocess
@@ -31,7 +30,6 @@ import sys
 from datetime import datetime
 from concurrent.futures import ThreadPoolExecutor
 from .sosnode import SosNode
-from distutils.sysconfig import get_python_lib
 from getpass import getpass
 from pipes import quote
 from six.moves import input
