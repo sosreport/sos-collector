@@ -718,7 +718,7 @@ class SosNode():
                 self.log_debug("Removing file %s" % path)
                 cmd = "rm -f %s" % path
                 res = self.run_command(cmd, need_root=True)
-                return True
+                return res['status'] == 0
             else:
                 self.log_debug("Attempting to remove remote file %s, but it "
                                "does not exist on filesystem" % path)
