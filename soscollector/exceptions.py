@@ -97,3 +97,17 @@ class UnsupportedHostException(Exception):
     def __init__(self):
         message = 'Host did not match any supported distributions'
         super(UnsupportedHostException, self).__init__(message)
+
+
+__all__ = [
+    'AuthPermissionDeniedException',
+    'CommandTimeoutException',
+    'ConnectionException',
+    'ConnectionTimeoutException',
+    'ControlPersistUnsupportedException',
+    'ControlSocketMissingException',
+    'InvalidPasswordException',
+    'PasswordRequestException',
+    'TimeoutPasswordAuthException',
+    'UnsupportedHostException'
+]
