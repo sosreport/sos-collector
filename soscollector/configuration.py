@@ -35,6 +35,11 @@ class Configuration(dict):
         self['host_types'] = self._load_supported_hosts()
         self['cluster_types'] = self._load_clusters()
 
+    def __eq__(self, other):
+        if isinstance(other, Configuration):
+            return all(x == y for x, y in zip(self, other))
+        return super(Configuration, self).__eq__(other)
+
     def set_defaults(self):
         self['sos_mod'] = {}
         self['master'] = ''
