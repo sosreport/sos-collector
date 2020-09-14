@@ -1,5 +1,12 @@
+# THIS STANDALONE PROJECT IS NO LONGER MAINTAINED
+
+sos-collector functionality has been merged into the `sos` project directly, and all future development will occur in that project.
+
+All issue reports, PRs, RFEs, and the like should be directed to https://github.com/sosreport/sos
+
 # sos-collector
 Collect sosreports from multiple (cluster) nodes simultaneously
+
 
 # Description
 sos-collector is a utility designed to collect sosreports from multiple nodes simultaneously and package them in a single archive. It is ideally suited for clustered environments, but can also be used for manually-defined sets of standalone nodes.
